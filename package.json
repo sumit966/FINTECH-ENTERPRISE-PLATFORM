@@ -2,7 +2,8 @@
   "name": "fintech-enterprise-platform",
   "private": true,
   "version": "1.0.0",
-  "description": "Nexus Enterprise Platform - FINTECH IT SOLUTIONS",
+  "description": "Nexus Enterprise Platform — FINTECH IT SOLUTIONS",
+  "type": "commonjs",
   "workspaces": [
     "backend",
     "frontend"

@@ -7,7 +7,7 @@ export interface UserData {
   passwordHash: string;
 }
 export const DEMO_PASSWORD_HASHES: Record<string, string> = {
-  default: 'REPLACE_WITH_REAL_BCRYPT_HASH',
+  default: '$2a$12$9Aclr34grvucoo9USRnRXek30GqM82Fpy.iFOlTIUp99Iw6dmePPq',
 };
 export const usersData: UserData[] = [
   { email: 'founder@fintechitsolutions.example',      fullName: 'Sumit Raj',       roleCode: 'FOUNDER_CEO',         passwordHash: DEMO_PASSWORD_HASHES.default },
