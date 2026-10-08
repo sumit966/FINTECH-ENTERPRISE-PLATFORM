@@ -1,5 +1,5 @@
 // ============================================================================
-// NEXUS ENTERPRISE PLATFORM - 500 Employees (deterministic)
+// NEXUS ENTERPRISE PLATFORM - 500 Employees (deterministic, fixed managers)
 // All fields computed from employee index using fixed formulas.
 // No Math.random, no Faker, no runtime randomness.
 // ============================================================================
@@ -44,14 +44,12 @@ export interface EmployeeData {
 
 const LOCATION_CODES = ['PUNE', 'BLR', 'NOIDA'];
 
-// Deterministic department assignment by employee number (12 to 499).
 const DEPARTMENT_CYCLE = [
   'BE','FE','FS','AIML','DATA','CLOUD','DEVOPS','SEC','QA','ENG',
   'BE','FE','FS','BE','AIML','DATA','CLOUD','SRE','SEC','QA',
   'ENG','BE','FE','FS','MOB','BE','AIML','DATA','CLOUD','DEVOPS',
 ];
 
-// Team code per department, chosen deterministically.
 const TEAM_BY_DEPT: Record<string, string[]> = {
   ENG:    ['TEAM-PLAT'],
   BE:     ['TEAM-PAY', 'TEAM-LEND'],
@@ -67,7 +65,6 @@ const TEAM_BY_DEPT: Record<string, string[]> = {
   QA:     ['TEAM-QA-1', 'TEAM-QA-2'],
 };
 
-// Grade by experience band.
 function gradeFor(exp: number): string {
   if (exp >= 14) return 'L8';
   if (exp >= 11) return 'L7';
@@ -79,7 +76,6 @@ function gradeFor(exp: number): string {
   return 'L1';
 }
 
-// Base monthly salary by grade (INR).
 const BASE_BY_GRADE: Record<string, number> = {
   L1:  25000,
   L2:  35000,
@@ -95,22 +91,20 @@ function pad4(n: number): string { return String(n).padStart(4, '0'); }
 function pad2(n: number): string { return String(n).padStart(2, '0'); }
 
 function emailFor(name: string, code: string): string {
-  const [first, last] = name.toLowerCase().split(' ');
-  return first + '.' + last + '.' + code.slice(-4) + '@fintechitsolutions.example';
+  const parts = name.toLowerCase().split(' ');
+  return parts[0] + '.' + parts[1] + '.' + code.slice(-4) + '@fintechitsolutions.example';
 }
 
 function personalEmailFor(name: string, code: string): string {
-  const [first, last] = name.toLowerCase().split(' ');
-  return first + last + code.slice(-2) + '@gmail.example';
+  const parts = name.toLowerCase().split(' ');
+  return parts[0] + parts[1] + code.slice(-2) + '@gmail.example';
 }
 
 function phoneFor(idx: number): string {
-  // Deterministic: 9000000000 + index*37 (unique, no collisions for 0..499)
   return '+91-9' + String(800000000 + idx * 137).padStart(9, '0');
 }
 
 function dobFor(idx: number): Date {
-  // Age 22..45. Fixed: start from 1980-01-15, add (idx % 24) years and (idx % 12) months.
   const year = 1980 + (idx % 24);
   const month = (idx % 12);
   const day = 1 + (idx % 28);
@@ -118,46 +112,26 @@ function dobFor(idx: number): Date {
 }
 
 function joiningDateFor(idx: number): Date {
-  // Spread across 2 years: base 2023-01-01, then + (idx mod 700) days.
   const base = Date.UTC(2023, 0, 1);
   const dayOffset = idx % 700;
   return new Date(base + dayOffset * 24 * 3600 * 1000);
 }
 
 function experienceFor(idx: number): number {
-  return 1 + ((idx * 7) % 15); // 1..15 years
+  return 1 + ((idx * 7) % 15);
 }
 
 function performanceFor(idx: number): number {
-  // Range 3.0 - 5.0, two decimals.
   return 3.0 + ((idx * 13) % 200) / 100;
 }
 
 function leaveBalanceFor(idx: number): number {
-  return 8 + (idx % 17); // 8..24
+  return 8 + (idx % 17);
 }
 
 // ---- Build the 500 employee records --------------------------------------
 
 export const employeesData: EmployeeData[] = [];
-
-// Reserved code FITS-0001 = Sumit Raj (Founder & CEO). No department/team.
-// FITS-0002..FITS-0012 map to the demo users so their emails stay stable.
-
-// Special codes that align with users.data.ts
-const SPECIAL_MAP: Record<number, string> = {
-  1: 'FITS-0002',  // director
-  2: 'FITS-0003',  // hr.head
-  3: 'FITS-0004',  // finance.head
-  4: 'FITS-0005',  // eng.head
-  5: 'FITS-0006',  // manager
-  6: 'FITS-0007',  // lead
-  7: 'FITS-0008',  // recruiter
-  8: 'FITS-0009',  // engineer
-  9: 'FITS-0010',  // qa
-  10: 'FITS-0011', // employee
-  11: 'FITS-0012', // auditor
-};
 
 for (let i = 0; i < 500; i++) {
   const employeeNumber = i + 1;
@@ -168,11 +142,8 @@ for (let i = 0; i < 500; i++) {
   const gender: Gender = i === 0 ? 'MALE' : (firstNameGender[firstName] || 'MALE');
 
   const locationCode = i === 0 ? 'PUNE' : LOCATION_CODES[i % 3];
-
-  // Founder has no department/team
   const departmentCode = i === 0 ? 'ENG' : DEPARTMENT_CYCLE[i % DEPARTMENT_CYCLE.length];
 
-  // Team selection: deterministic by index within the department
   let teamCode: string | null = null;
   if (i !== 0) {
     const candidates = TEAM_BY_DEPT[departmentCode] || [];
@@ -220,65 +191,88 @@ for (let i = 0; i < 500; i++) {
     locationCode,
     departmentCode,
     teamCode,
-    managerCode: null,     // resolved at seed time
-    teamLeadCode: null,    // resolved at seed time
+    managerCode: null,
+    teamLeadCode: null,
   });
 }
 
-// ---- Manager and Team Lead assignment (deterministic) --------------------
-// Rules:
-//   - Founder (FITS-0001) has no manager.
-//   - Directors/Heads (FITS-0002..0005) report to Founder.
-//   - Team leads (one per team) are the lowest-numbered ACTIVE employee
-//     assigned to that team.
-//   - Every other employee reports to their team lead.
-//   - Team leads report to the department manager (lowest-numbered employee
-//     of that department who is not a lead).
-
+// ---- Manager and Team Lead assignment ------------------------------------
+// Group employees by team and department.
 const byTeam: Record<string, EmployeeData[]> = {};
 const byDept: Record<string, EmployeeData[]> = {};
 
 for (const e of employeesData) {
   if (e.teamCode) {
-    byTeam[e.teamCode] = byTeam[e.teamCode] || [];
+    if (!byTeam[e.teamCode]) byTeam[e.teamCode] = [];
     byTeam[e.teamCode].push(e);
   }
-  byDept[e.departmentCode] = byDept[e.departmentCode] || [];
+  if (!byDept[e.departmentCode]) byDept[e.departmentCode] = [];
   byDept[e.departmentCode].push(e);
 }
 
+// One lead per team: the lowest-code member.
 const teamLeads: Record<string, string> = {};
-for (const [teamCode, members] of Object.entries(byTeam)) {
-  teamLeads[teamCode] = members[0].employeeCode;
+for (const teamCode of Object.keys(byTeam)) {
+  teamLeads[teamCode] = byTeam[teamCode][0].employeeCode;
 }
+const allLeadCodes = new Set(Object.values(teamLeads));
 
+// One manager per department: prefer a non-lead who isn't the founder.
+// Excludes the founder from being a manager for any department.
 const deptManagers: Record<string, string> = {};
-for (const [deptCode, members] of Object.entries(byDept)) {
-  const candidate = members.find((m) => !Object.values(teamLeads).includes(m.employeeCode));
-  deptManagers[deptCode] = (candidate || members[0]).employeeCode;
+for (const deptCode of Object.keys(byDept)) {
+  const members = byDept[deptCode];
+  const nonLead = members.find(
+    (m) => !allLeadCodes.has(m.employeeCode) && m.employeeCode !== 'FITS-0001'
+  );
+  const fallback = members.find((m) => m.employeeCode !== 'FITS-0001') || members[0];
+  deptManagers[deptCode] = (nonLead || fallback).employeeCode;
 }
 
+// Assign manager + teamLead, with self-reference guard.
 for (const e of employeesData) {
-  // Founder has no manager
-  if (e.employeeCode === 'FITS-0001') { e.managerCode = null; e.teamLeadCode = null; continue; }
+  // Founder has no manager.
+  if (e.employeeCode === 'FITS-0001') {
+    e.managerCode = null;
+    e.teamLeadCode = null;
+    continue;
+  }
 
-  // The four exec users report to the founder
+  // The four exec users (FITS-0002..FITS-0005) report directly to the founder.
   if (['FITS-0002', 'FITS-0003', 'FITS-0004', 'FITS-0005'].includes(e.employeeCode)) {
     e.managerCode = 'FITS-0001';
     e.teamLeadCode = null;
     continue;
   }
 
-  const isLead = e.teamCode && teamLeads[e.teamCode] === e.employeeCode;
+  const isLead = e.teamCode ? teamLeads[e.teamCode] === e.employeeCode : false;
+
+  // Department manager for this employee's department.
+  let mgr = deptManagers[e.departmentCode] || 'FITS-0002';
+
+  // Never self-reference.
+  if (mgr === e.employeeCode) mgr = 'FITS-0001';
+
   if (isLead) {
     e.teamLeadCode = null;
-    e.managerCode = deptManagers[e.departmentCode] || 'FITS-0002';
+    e.managerCode = mgr;
   } else if (e.teamCode) {
     e.teamLeadCode = teamLeads[e.teamCode];
-    e.managerCode = deptManagers[e.departmentCode] || 'FITS-0002';
+    e.managerCode = mgr;
   } else {
     e.teamLeadCode = null;
-    e.managerCode = deptManagers[e.departmentCode] || 'FITS-0002';
+    e.managerCode = mgr;
+  }
+}
+
+// ---- Final self-manager cleanup pass -------------------------------------
+// Belt and braces: if anything above still produced a self-reference, fix it.
+for (const e of employeesData) {
+  if (e.managerCode === e.employeeCode) {
+    e.managerCode = e.employeeCode === 'FITS-0001' ? null : 'FITS-0001';
+  }
+  if (e.teamLeadCode === e.employeeCode) {
+    e.teamLeadCode = null;
   }
 }
 
@@ -291,6 +285,9 @@ if (employeesData.length !== 500) {
 const codes = new Set(employeesData.map((e) => e.employeeCode));
 const emails = new Set(employeesData.map((e) => e.email));
 const names = new Set(employeesData.map((e) => e.fullName));
+const selfMgrs = employeesData.filter((e) => e.managerCode === e.employeeCode);
+
 if (codes.size !== 500) throw new Error('Duplicate employee codes');
 if (emails.size !== 500) throw new Error('Duplicate emails');
 if (names.size !== 500) throw new Error('Duplicate names');
+if (selfMgrs.length !== 0) throw new Error('Self-managed employees: ' + selfMgrs.length);

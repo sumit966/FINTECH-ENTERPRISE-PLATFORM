@@ -1,0 +1,1 @@
+SELECT COUNT(*) AS self_managed FROM "Employee" WHERE "managerId" = id;
