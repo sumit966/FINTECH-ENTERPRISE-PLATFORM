@@ -1,0 +1,9 @@
+SELECT 'Client'             AS table_name, COUNT(*) FROM "Client"
+UNION ALL SELECT 'ClientContact',         COUNT(*) FROM "ClientContact"
+UNION ALL SELECT 'Contract',              COUNT(*) FROM "Contract"
+UNION ALL SELECT 'Project',               COUNT(*) FROM "Project"
+UNION ALL SELECT 'ProjectMember',         COUNT(*) FROM "ProjectMember"
+UNION ALL SELECT 'ProjectTask',           COUNT(*) FROM "ProjectTask"
+UNION ALL SELECT 'ProjectMilestone',      COUNT(*) FROM "ProjectMilestone"
+UNION ALL SELECT 'ProjectRisk',           COUNT(*) FROM "ProjectRisk"
+UNION ALL SELECT 'Invoice',               COUNT(*) FROM "Invoice";
