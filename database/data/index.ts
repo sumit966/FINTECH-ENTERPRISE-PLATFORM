@@ -4,3 +4,7 @@ export * from './teams.data';
 export * from './roles.data';
 export * from './permissions.data';
 export * from './users.data';
+export * from './employee-names.data';
+export * from './skills.data';
+export * from './certifications.data';
+export * from './employees.data';
