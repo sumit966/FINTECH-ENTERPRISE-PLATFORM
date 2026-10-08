@@ -1,0 +1,10 @@
+{
+  "name": "fintech-enterprise-platform",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Nexus Enterprise Platform - FINTECH IT SOLUTIONS",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ]
+}
