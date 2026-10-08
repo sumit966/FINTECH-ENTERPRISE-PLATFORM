@@ -1,4 +1,4 @@
-# ---------- Node ----------
+# Node
 node_modules/
 dist/
 build/
@@ -6,29 +6,28 @@ build/
 npm-debug.log*
 yarn-error.log*
 
-# ---------- Env ----------
+# Env
 .env
 .env.local
 .env.*.local
 
-# ---------- Prisma ----------
+# Prisma
 database/prisma/migrations/dev.db*
 
-# ---------- Vercel ----------
+# Vercel
 .vercel
 
-# ---------- IDE ----------
+# IDE
 .vscode/
 .idea/
 *.swp
 
-# ---------- OS ----------
+# OS
 .DS_Store
 Thumbs.db
 
-# ---------- Tests ----------
+# Tests
 coverage/
 
-# ---------- Root lockfile ----------
-# Dependencies live in backend/ and frontend/ only
+# Root lockfile (deps live in backend/ and frontend/)
 /package-lock.json
