@@ -1,0 +1,21 @@
+export interface RoleData { code: string; name: string; description: string; level: number; }
+export const rolesData: RoleData[] = [
+  { code: 'FOUNDER_CEO',        name: 'Founder & CEO',       description: 'Ultimate authority',          level: 100 },
+  { code: 'DIRECTOR',           name: 'Director',            description: 'Cross-department leadership', level: 90  },
+  { code: 'DEPT_HEAD',          name: 'Department Head',     description: 'Owns a department',           level: 80  },
+  { code: 'SENIOR_MANAGER',     name: 'Senior Manager',      description: 'Multi-team leadership',       level: 70  },
+  { code: 'HR_MANAGER',         name: 'HR Manager',          description: 'Leads HR',                    level: 65  },
+  { code: 'FINANCE_MANAGER',    name: 'Finance Manager',     description: 'Leads Finance',               level: 65  },
+  { code: 'ENGINEERING_MANAGER',name: 'Engineering Manager', description: 'Leads Engineering',           level: 65  },
+  { code: 'MANAGER',            name: 'Manager',             description: 'Manages one team',            level: 60  },
+  { code: 'PROJECT_MANAGER',    name: 'Project Manager',     description: 'Owns delivery',               level: 60  },
+  { code: 'OPS_MANAGER',        name: 'Operations Manager',  description: 'Runs operations',             level: 55  },
+  { code: 'TEAM_LEAD',          name: 'Team Lead',           description: 'Technical lead',              level: 50  },
+  { code: 'RECRUITER',          name: 'Recruiter',           description: 'Runs hiring',                 level: 45  },
+  { code: 'ENGINEER',           name: 'Engineer',            description: 'Software engineer',           level: 40  },
+  { code: 'QA',                 name: 'QA Engineer',         description: 'Quality engineering',         level: 40  },
+  { code: 'EMPLOYEE',           name: 'Employee',            description: 'General employee',            level: 30  },
+  { code: 'CLIENT',             name: 'Client',              description: 'External client',             level: 20  },
+  { code: 'CANDIDATE',          name: 'Candidate',           description: 'External candidate',          level: 10  },
+  { code: 'AUDITOR',            name: 'Auditor',             description: 'Read-only audit',             level: 25  },
+];
