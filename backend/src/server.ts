@@ -1,14 +1,21 @@
-import 'dotenv/config';
-import express from 'express';
+import { createApp } from './app';
+import { env } from './config/env';
+import { logger } from './config/logger';
+import { shutdownPrisma } from './config/prisma';
 
-const app = express();
-app.use(express.json());
+const app = createApp();
 
-app.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok', service: 'nexus-backend', ts: new Date().toISOString() });
+const server = app.listen(env.port, () => {
+  logger.info('nexus-backend listening on http://localhost:' + env.port);
 });
 
-const port = Number(process.env.BACKEND_PORT ?? 4000);
-app.listen(port, () => {
-  console.log(`[nexus-backend] listening on http://localhost:${port}`);
-});
+async function shutdown(signal: string) {
+  logger.info('Shutting down (' + signal + ')...');
+  server.close(async () => {
+    await shutdownPrisma();
+    process.exit(0);
+  });
+}
+
+process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('SIGTERM', () => shutdown('SIGTERM'));
