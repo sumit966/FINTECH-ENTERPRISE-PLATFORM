@@ -6,9 +6,9 @@ import {
   Code2, Cloud, ShieldCheck, Sparkles, Activity, FileText, BookOpen,
   Bell, Calendar, ScrollText, Settings, Search, ArrowRight, Plus, FileBadge,
 } from 'lucide-react';
-import { useAuth } from '../hooks/useAuth';
-import { searchService, SearchHit } from '../services/searchService';
-import { useDebounce } from '../hooks/useDebounce';
+import { useAuth } from '../../hooks/useAuth';
+import { searchService, SearchHit } from '../../services/searchService';
+import { useDebounce } from '../../hooks/useDebounce';
 
 interface PaletteItem {
   id: string;
@@ -87,7 +87,7 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
   }, [hasPermission, navigate]);
 
   const actions: PaletteItem[] = useMemo(() => [
-    { id: 'act/search-employees', label: 'Search employees…',      icon: Search, action: () => { setQuery(''); inputRef.current?.focus(); } },
+    { id: 'act/search-employees', label: 'Search employeesÃ¢â‚¬Â¦',      icon: Search, action: () => { setQuery(''); inputRef.current?.focus(); } },
     { id: 'act/new-project',      label: 'Create a new project',   icon: Plus,   action: () => navigate('/projects') },
     { id: 'act/new-job',          label: 'Create a new job opening', icon: Plus, action: () => navigate('/recruitment') },
     { id: 'act/view-payroll',     label: 'View this month payroll', icon: Wallet, action: () => navigate('/payroll') },
@@ -162,7 +162,7 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
             ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Type a command or search employees, projects, clients…"
+            placeholder="Type a command or search employees, projects, clientsÃ¢â‚¬Â¦"
             className="flex-1 bg-transparent text-sm focus:outline-none"
           />
           <kbd className="text-[10px] rounded border border-slate-300 dark:border-slate-700 px-1.5 py-0.5 text-slate-500">ESC</kbd>
@@ -195,7 +195,7 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
           {(hits.length > 0 || busy) && (
             <div>
               <div className="px-4 py-1 text-[10px] uppercase tracking-wider text-slate-500">
-                Search {busy && <span className="text-brand-500">· searching…</span>}
+                Search {busy && <span className="text-brand-500">Ã‚Â· searchingÃ¢â‚¬Â¦</span>}
               </div>
               {hits.map((h, i) => {
                 const globalIdx = filteredCommands.length + i;
@@ -225,8 +225,8 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
         </div>
 
         <div className="flex items-center gap-3 px-4 py-2 border-t border-slate-200 dark:border-slate-800 text-[10px] text-slate-500">
-          <span><kbd className="rounded border border-slate-300 dark:border-slate-700 px-1">↑↓</kbd> navigate</span>
-          <span><kbd className="rounded border border-slate-300 dark:border-slate-700 px-1">↵</kbd> open</span>
+          <span><kbd className="rounded border border-slate-300 dark:border-slate-700 px-1">Ã¢â€ â€˜Ã¢â€ â€œ</kbd> navigate</span>
+          <span><kbd className="rounded border border-slate-300 dark:border-slate-700 px-1">Ã¢â€ Âµ</kbd> open</span>
           <span><kbd className="rounded border border-slate-300 dark:border-slate-700 px-1">esc</kbd> close</span>
         </div>
       </div>
