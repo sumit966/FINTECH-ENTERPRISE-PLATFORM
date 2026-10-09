@@ -42,7 +42,23 @@ export interface ProjectListResponse {
   totalPages: number;
 }
 
+export interface ReferenceProject {
+  name: string;
+  repoUrl: string;
+  description: string;
+  architecture: string;
+  techStack: {
+    frontend: string[];
+    backend: string[];
+    database: string[];
+    infrastructure: string[];
+  };
+  installSteps: string[];
+  keyFeatures: string[];
+}
+
 export interface ProjectDetail extends ProjectListItem {
+  reference: ReferenceProject | null;
   techDatabase: string[];
   techAI: string[];
   integrations: string[];

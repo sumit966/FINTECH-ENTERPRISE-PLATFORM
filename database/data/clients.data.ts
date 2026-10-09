@@ -64,7 +64,6 @@ export const clientsData: ClientData[] = [
   // ---- UAE (3) ----
   { clientCode: 'CLI-031', companyName: 'Emirates Capital PJSC',     country: 'UAE',       industry: 'Banking',       billingTerms: 'NET_30', slaTier: 'PLATINUM', contractValue: 13200000, revenue: 4400000, healthScore: 4.5, status: 'ACTIVE' },
   { clientCode: 'CLI-032', companyName: 'Dubai Retail Holdings',     country: 'UAE',       industry: 'Retail',        billingTerms: 'NET_30', slaTier: 'GOLD',     contractValue: 6000000,  revenue: 1800000, healthScore: 4.1, status: 'ACTIVE' },
-  { clientCode: 'CLI-033', companyName: 'Abu Dhabi Logistics',       country: 'UAE',       industry: 'Logistics',     billingTerms: 'NET_45', slaTier: 'SILVER',   contractValue: 4200000,  revenue: 1200000, healthScore: 3.8, status: 'ACTIVE' },
 
   // ---- Australia (3) ----
   { clientCode: 'CLI-034', companyName: 'Southern Cross Financial',  country: 'Australia', industry: 'FinTech',       billingTerms: 'NET_30', slaTier: 'GOLD',     contractValue: 7200000,  revenue: 2200000, healthScore: 4.3, status: 'ACTIVE' },
@@ -81,6 +80,7 @@ export const clientsData: ClientData[] = [
   { clientCode: 'CLI-043', companyName: 'Mexico City Travel Group',  country: 'Mexico',    industry: 'Travel',        billingTerms: 'NET_30', slaTier: 'SILVER',   contractValue: 3600000,  revenue: 880000,  healthScore: 3.5, status: 'ACTIVE' },
   { clientCode: 'CLI-044', companyName: 'Warsaw Enterprise IT',      country: 'Poland',    industry: 'Enterprise',    billingTerms: 'NET_30', slaTier: 'GOLD',     contractValue: 5400000,  revenue: 1400000, healthScore: 4.0, status: 'ACTIVE' },
   { clientCode: 'CLI-045', companyName: 'Dublin Fintech Ltd',        country: 'Ireland',   industry: 'FinTech',       billingTerms: 'NET_30', slaTier: 'PLATINUM', contractValue: 10800000, revenue: 3400000, healthScore: 4.4, status: 'ACTIVE' },
+  { clientCode: 'CLI-046', companyName: 'Shannon Health Systems',    country: 'Ireland',   industry: 'Healthcare',    billingTerms: 'NET_45', slaTier: 'GOLD',     contractValue: 7200000,  revenue: 2100000, healthScore: 4.2, status: 'ACTIVE' },
 ];
 
-if (clientsData.length !== 45) throw new Error('Expected 45 clients');
+if (clientsData.length !== 46) throw new Error('Expected 46 clients');

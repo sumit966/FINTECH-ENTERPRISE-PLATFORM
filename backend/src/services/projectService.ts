@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '../config/prisma';
+import { getReferenceForIndustry } from './referenceProjects';
 import { paginated } from '../utils/apiResponse';
 
 export interface ListProjectsParams {
@@ -210,6 +211,7 @@ export async function getProjectDetail(projectCode: string) {
       status: i.status,
       paidAmount: Number(i.paidAmount),
     })),
+    reference: getReferenceForIndustry(p.industry),
     repositories: p.repositories.map((r) => ({
       id: r.id,
       repoCode: r.repoCode,

@@ -324,6 +324,61 @@ export default function ProjectDetailPage() {
         </Card>
       )}
 
+      {/* Reference Implementation */}
+      {p.reference && (
+        <Card className="border-brand-500/30 bg-brand-500/5">
+          <CardHeader
+            title={'Reference Implementation: ' + p.reference.name}
+            subtitle={p.reference.description}
+            action={
+              <a
+                href={p.reference.repoUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-xs text-brand-500 hover:underline"
+              >
+                <ExternalLink size={12} /> Open repository
+              </a>
+            }
+          />
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-slate-500 mb-2">Architecture</div>
+              <p className="text-sm text-slate-600 dark:text-slate-300 mb-4">{p.reference.architecture}</p>
+
+              <div className="text-[10px] uppercase tracking-wider text-slate-500 mb-2">Key Features</div>
+              <ul className="text-sm text-slate-600 dark:text-slate-300 space-y-1 list-disc list-inside">
+                {p.reference.keyFeatures.map((f) => <li key={f}>{f}</li>)}
+              </ul>
+            </div>
+
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-slate-500 mb-2">Reference Tech Stack</div>
+              <div className="space-y-3 mb-4">
+                {[
+                  { label: 'Frontend', items: p.reference.techStack.frontend },
+                  { label: 'Backend', items: p.reference.techStack.backend },
+                  { label: 'Database', items: p.reference.techStack.database },
+                  { label: 'Infrastructure', items: p.reference.techStack.infrastructure },
+                ].map((g) => (
+                  <div key={g.label}>
+                    <div className="text-[10px] text-slate-500 mb-1">{g.label}</div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {g.items.map((t) => <Badge key={t} tone="neutral">{t}</Badge>)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="text-[10px] uppercase tracking-wider text-slate-500 mb-2">Install Steps</div>
+              <pre className="rounded-md bg-slate-900 text-slate-100 p-3 text-[11px] font-mono overflow-x-auto">
+                {p.reference.installSteps.join('\n')}
+              </pre>
+            </div>
+          </div>
+        </Card>
+      )}
       {/* Related repos */}
       {p.repositories.length > 0 && (
         <Card>
