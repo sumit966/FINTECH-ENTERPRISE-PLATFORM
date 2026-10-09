@@ -13,17 +13,26 @@ export default function Topbar() {
     navigate('/login');
   };
 
+  const openPalette = () => {
+    window.dispatchEvent(new CustomEvent('nexus:open-palette'));
+  };
+
   return (
     <header className="h-16 sticky top-0 z-30 flex items-center gap-3 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur px-4">
       <div className="flex-1 max-w-lg">
-        <div className="relative">
+        <button
+          onClick={openPalette}
+          className="w-full text-left relative group"
+          title="Search or run a command (Ctrl+K)"
+        >
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-          <input
-            placeholder="Search employees, projects, clients…   (Ctrl+K)"
-            className="w-full pl-9 pr-3 py-2 text-sm rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500/40"
-            readOnly
-          />
-        </div>
+          <div className="w-full pl-9 pr-12 py-2 text-sm rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-400 group-hover:border-brand-500/50 transition">
+            Search or run a command…
+          </div>
+          <kbd className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] rounded border border-slate-300 dark:border-slate-700 px-1.5 py-0.5 text-slate-500">
+            Ctrl K
+          </kbd>
+        </button>
       </div>
 
       <Link to="/notifications" className="relative p-2 rounded hover:bg-slate-100 dark:hover:bg-slate-800" title="Notifications">

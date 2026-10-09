@@ -1,0 +1,10 @@
+import { Router } from 'express';
+import { authenticate } from '../middleware/authMiddleware';
+import { requirePermission } from '../middleware/rbacMiddleware';
+import * as k from '../controllers/knowledgeController';
+const router = Router();
+router.use(authenticate);
+router.get('/summary', requirePermission('knowledge.read'), k.summary);
+router.get('/',        requirePermission('knowledge.read'), k.list);
+router.get('/:slug',   requirePermission('knowledge.read'), k.detail);
+export default router;

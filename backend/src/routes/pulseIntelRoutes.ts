@@ -1,0 +1,11 @@
+import { Router } from 'express';
+import { authenticate } from '../middleware/authMiddleware';
+import { requirePermission } from '../middleware/rbacMiddleware';
+import * as intel from '../controllers/pulseIntelController';
+const router = Router();
+router.use(authenticate);
+router.get('/kpis',           requirePermission('analytics.read'), intel.kpis);
+router.get('/kpis/:code',     requirePermission('analytics.read'), intel.kpiDetail);
+router.get('/scores',         requirePermission('analytics.read'), intel.scores);
+router.get('/health',         requirePermission('analytics.read'), intel.health);
+export default router;

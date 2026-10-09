@@ -3,21 +3,50 @@ import { useAuthContext } from './context/AuthContext';
 import DashboardLayout from './layouts/DashboardLayout';
 import LoginPage from './pages/auth/LoginPage';
 import NotFoundPage from './pages/NotFoundPage';
-import FounderCommandCenter from './pages/founder/FounderCommandCenter';
 
-function Placeholder({ title, subtitle }: { title: string; subtitle: string }) {
-  return (
-    <div>
-      <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-      <p className="text-slate-500 dark:text-slate-400 mt-1">{subtitle}</p>
-      <div className="mt-6 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6">
-        <p className="text-sm text-slate-500 dark:text-slate-400">
-          This module is coming online. The data layer is fully seeded — the UI is being assembled module by module.
-        </p>
-      </div>
-    </div>
-  );
-}
+// Command
+import FounderCommandCenter from './pages/founder/FounderCommandCenter';
+import ExecutiveDashboard from './pages/executive/ExecutiveDashboard';
+import PulseIntelligence from './pages/pulse/PulseIntelligence';
+import AICommandCenter from './pages/ai/AICommandCenter';
+
+// People
+import EmployeesPage from './pages/hr/EmployeesPage';
+import EmployeeProfilePage from './pages/hr/EmployeeProfilePage';
+import OrgChartPage from './pages/hr/OrgChartPage';
+import AttendancePage from './pages/hr/AttendancePage';
+import LeavePage from './pages/hr/LeavePage';
+import PayrollPage from './pages/hr/PayrollPage';
+
+// Revenue
+import ClientsPage from './pages/clients/ClientsPage';
+import ClientDetailPage from './pages/clients/ClientDetailPage';
+import ProjectsPage from './pages/projects/ProjectsPage';
+import ProjectDetailPage from './pages/projects/ProjectDetailPage';
+import FinancePage from './pages/finance/FinancePage';
+
+// Operations
+import RecruitmentPage from './pages/recruitment/RecruitmentPage';
+import CandidateDetailPage from './pages/recruitment/CandidateDetailPage';
+import ExamsPage from './pages/exams/ExamsPage';
+import AssessmentDetailPage from './pages/exams/AssessmentDetailPage';
+import AssetsPage from './pages/assets/AssetsPage';
+import LicensesPage from './pages/assets/LicensesPage';
+import VendorsPage from './pages/vendors/VendorsPage';
+
+// Engineering
+import EngineeringPage from './pages/engineering/EngineeringPage';
+import RepositoryDetailPage from './pages/engineering/RepositoryDetailPage';
+import CloudPage from './pages/cloud/CloudPage';
+import SecurityCenter from './pages/security/SecurityCenter';
+
+// Workspace
+import CalendarPage from './pages/calendar/CalendarPage';
+import DocumentsPage from './pages/documents/DocumentsPage';
+import KnowledgePage from './pages/knowledge/KnowledgePage';
+import NotificationsPage from './pages/notifications/NotificationsPage';
+import AuditPage from './pages/audit/AuditPage';
+import SettingsPage from './pages/settings/SettingsPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuthContext();
@@ -48,31 +77,49 @@ export default function AppRouter() {
           </ProtectedRoute>
         }
       >
+        {/* Command */}
         <Route index element={<FounderCommandCenter />} />
-        <Route path="executive"      element={<Placeholder title="Executive Dashboard"    subtitle="Company and operational KPIs" />} />
-        <Route path="employees"      element={<Placeholder title="Employees"              subtitle="Employee directory and profiles" />} />
-        <Route path="org"            element={<Placeholder title="Organization"           subtitle="Org chart, departments, teams" />} />
-        <Route path="attendance"     element={<Placeholder title="Attendance"             subtitle="Attendance and work-from-home tracking" />} />
-        <Route path="leave"          element={<Placeholder title="Leave Management"       subtitle="Leave balances and approvals" />} />
-        <Route path="payroll"        element={<Placeholder title="Payroll"                subtitle="24-month payroll history and processing" />} />
-        <Route path="finance"        element={<Placeholder title="Finance / ERP"          subtitle="Invoices, expenses, P&L, budget" />} />
-        <Route path="projects"       element={<Placeholder title="Projects"               subtitle="60 active and delivered projects" />} />
-        <Route path="clients"        element={<Placeholder title="Clients / CRM"          subtitle="Client portfolio and contracts" />} />
-        <Route path="procurement"    element={<Placeholder title="Procurement"            subtitle="Vendors and purchase orders" />} />
-        <Route path="assets"         element={<Placeholder title="Assets"                 subtitle="Hardware and software inventory" />} />
-        <Route path="recruitment"    element={<Placeholder title="Recruitment / ATS"      subtitle="Openings, candidates, interviews" />} />
-        <Route path="exams"          element={<Placeholder title="Exams / Assessment"     subtitle="Question bank and candidate attempts" />} />
-        <Route path="engineering"    element={<Placeholder title="Engineering"            subtitle="Repositories, builds, deployments" />} />
-        <Route path="cloud"          element={<Placeholder title="Cloud"                  subtitle="AWS / Azure / GCP prototype view" />} />
-        <Route path="security"       element={<Placeholder title="Security Center"        subtitle="Events, vulnerabilities, compliance" />} />
-        <Route path="ai"             element={<Placeholder title="AI Command Center"      subtitle="Natural language over RBAC-scoped data" />} />
-        <Route path="pulse"          element={<Placeholder title="Pulse Intelligence"     subtitle="Live KPI dashboard" />} />
-        <Route path="documents"      element={<Placeholder title="Documents"              subtitle="Document management" />} />
-        <Route path="knowledge"      element={<Placeholder title="Knowledge"              subtitle="Policies, SOPs, and articles" />} />
-        <Route path="notifications"  element={<Placeholder title="Notifications"          subtitle="Your alerts and updates" />} />
-        <Route path="calendar"       element={<Placeholder title="Company Calendar"       subtitle="Meetings, milestones, releases" />} />
-        <Route path="audit"          element={<Placeholder title="Audit & Governance"     subtitle="Audit logs and compliance" />} />
-        <Route path="settings"       element={<Placeholder title="Settings"               subtitle="System administration" />} />
+        <Route path="executive"      element={<ExecutiveDashboard />} />
+        <Route path="pulse"          element={<PulseIntelligence />} />
+        <Route path="ai"             element={<AICommandCenter />} />
+
+        {/* People */}
+        <Route path="employees"      element={<EmployeesPage />} />
+        <Route path="employees/:id"  element={<EmployeeProfilePage />} />
+        <Route path="org"            element={<OrgChartPage />} />
+        <Route path="attendance"     element={<AttendancePage />} />
+        <Route path="leave"          element={<LeavePage />} />
+        <Route path="payroll"        element={<PayrollPage />} />
+
+        {/* Revenue */}
+        <Route path="clients"        element={<ClientsPage />} />
+        <Route path="clients/:code"  element={<ClientDetailPage />} />
+        <Route path="projects"       element={<ProjectsPage />} />
+        <Route path="projects/:code" element={<ProjectDetailPage />} />
+        <Route path="finance"        element={<FinancePage />} />
+
+        {/* Operations */}
+        <Route path="recruitment"    element={<RecruitmentPage />} />
+        <Route path="recruitment/candidates/:code" element={<CandidateDetailPage />} />
+        <Route path="exams"          element={<ExamsPage />} />
+        <Route path="exams/assessments/:code" element={<AssessmentDetailPage />} />
+        <Route path="assets"         element={<AssetsPage />} />
+        <Route path="licenses"       element={<LicensesPage />} />
+        <Route path="procurement"    element={<VendorsPage />} />
+
+        {/* Engineering */}
+        <Route path="engineering"    element={<EngineeringPage />} />
+        <Route path="engineering/repos/:code" element={<RepositoryDetailPage />} />
+        <Route path="cloud"          element={<CloudPage />} />
+        <Route path="security"       element={<SecurityCenter />} />
+
+        {/* Workspace */}
+        <Route path="calendar"       element={<CalendarPage />} />
+        <Route path="documents"      element={<DocumentsPage />} />
+        <Route path="knowledge"      element={<KnowledgePage />} />
+        <Route path="notifications"  element={<NotificationsPage />} />
+        <Route path="audit"          element={<AuditPage />} />
+        <Route path="settings"       element={<SettingsPage />} />
       </Route>
 
       <Route path="*" element={<NotFoundPage />} />

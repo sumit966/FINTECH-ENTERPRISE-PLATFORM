@@ -1,0 +1,10 @@
+import { Router } from 'express';
+import { authenticate } from '../middleware/authMiddleware';
+import { requirePermission } from '../middleware/rbacMiddleware';
+import * as s from '../controllers/settingsController';
+const router = Router();
+router.use(authenticate);
+router.get('/overview',      requirePermission('settings.read'), s.overview);
+router.get('/integrations',  requirePermission('settings.read'), s.integrations);
+router.get('/about',         requirePermission('settings.read'), s.about);
+export default router;

@@ -1,14 +1,61 @@
 import { Router } from 'express';
 import authRoutes from './authRoutes';
+import searchRoutes from './searchRoutes';
 import pulseRoutes from './pulseRoutes';
+import employeeRoutes from './employeeRoutes';
+import payrollRoutes from './payrollRoutes';
+import projectRoutes from './projectRoutes';
+import clientRoutes from './clientRoutes';
+import financeRoutes from './financeRoutes';
+import recruitmentRoutes from './recruitmentRoutes';
+import examRoutes from './examRoutes';
+import attendanceRoutes from './attendanceRoutes';
+import leaveRoutes from './leaveRoutes';
+import assetRoutes from './assetRoutes';
+import vendorRoutes from './vendorRoutes';
+import licenseRoutes from './licenseRoutes';
+import documentRoutes from './documentRoutes';
+import knowledgeRoutes from './knowledgeRoutes';
+import engineeringRoutes from './engineeringRoutes';
+import cloudRoutes from './cloudRoutes';
+import securityRoutes from './securityRoutes';
+import pulseIntelRoutes from './pulseIntelRoutes';
+import calendarRoutes from './calendarRoutes';
+import notificationRoutes from './notificationRoutes';
+import aiRoutes from './aiRoutes';
+import execRoutes from './execRoutes';
+import settingsRoutes from './settingsRoutes';
+import auditRoutes from './auditRoutes';
 
 const router = Router();
-
 router.use('/auth', authRoutes);
+router.use('/search', searchRoutes);
 router.use('/pulse', pulseRoutes);
+router.use('/intel', pulseIntelRoutes);
+router.use('/ai', aiRoutes);
+router.use('/exec', execRoutes);
+router.use('/settings', settingsRoutes);
+router.use('/audit', auditRoutes);
+router.use('/employees', employeeRoutes);
+router.use('/payroll', payrollRoutes);
+router.use('/projects', projectRoutes);
+router.use('/clients', clientRoutes);
+router.use('/finance', financeRoutes);
+router.use('/recruitment', recruitmentRoutes);
+router.use('/exams', examRoutes);
+router.use('/attendance', attendanceRoutes);
+router.use('/leave', leaveRoutes);
+router.use('/assets', assetRoutes);
+router.use('/vendors', vendorRoutes);
+router.use('/licenses', licenseRoutes);
+router.use('/documents', documentRoutes);
+router.use('/knowledge', knowledgeRoutes);
+router.use('/engineering', engineeringRoutes);
+router.use('/cloud', cloudRoutes);
+router.use('/security', securityRoutes);
+router.use('/calendar', calendarRoutes);
+router.use('/notifications', notificationRoutes);
 
-router.get('/health', (_req, res) => {
-  res.json({ status: 'ok', service: 'nexus-backend', ts: new Date().toISOString() });
-});
+router.get('/health', (_req, res) => res.json({ status: 'ok', service: 'nexus-backend', ts: new Date().toISOString() }));
 
 export default router;

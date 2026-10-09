@@ -1,14 +1,12 @@
 // ============================================================================
 // NEXUS ENTERPRISE PLATFORM - Employee name generator (run once)
-// Composes 500 unique Indian names from explicit first-name and last-name
-// pools by walking them in a fixed nested loop. No randomness.
-// Writes: database/data/employee-names.data.ts
+// Interleaves 100 first names with 50 last names via a diagonal walk
+// (first[i + k], last[(i + k) % lastCount]) so no two consecutive names
+// share a first name. Output: 500 unique names, mixed gender.
 // ============================================================================
 import * as fs from 'fs';
 import * as path from 'path';
 
-// First names: 100 entries, each mapped to a fixed gender.
-// Order: group by community and region for a diverse roster.
 const FIRST_NAMES: { name: string; gender: 'MALE' | 'FEMALE' }[] = [
   // North Indian Hindu - male (1-15)
   { name: 'Aarav',      gender: 'MALE' },
@@ -26,7 +24,6 @@ const FIRST_NAMES: { name: string; gender: 'MALE' | 'FEMALE' }[] = [
   { name: 'Rudra',      gender: 'MALE' },
   { name: 'Shaurya',    gender: 'MALE' },
   { name: 'Parth',      gender: 'MALE' },
-
   // North Indian Hindu - female (16-30)
   { name: 'Ananya',     gender: 'FEMALE' },
   { name: 'Diya',       gender: 'FEMALE' },
@@ -43,7 +40,6 @@ const FIRST_NAMES: { name: string; gender: 'MALE' | 'FEMALE' }[] = [
   { name: 'Nitya',      gender: 'FEMALE' },
   { name: 'Tanvi',      gender: 'FEMALE' },
   { name: 'Kavya',      gender: 'FEMALE' },
-
   // South Indian Hindu - male (31-45)
   { name: 'Karthik',    gender: 'MALE' },
   { name: 'Vignesh',    gender: 'MALE' },
@@ -60,7 +56,6 @@ const FIRST_NAMES: { name: string; gender: 'MALE' | 'FEMALE' }[] = [
   { name: 'Praveen',    gender: 'MALE' },
   { name: 'Suresh',     gender: 'MALE' },
   { name: 'Ramesh',     gender: 'MALE' },
-
   // South Indian Hindu - female (46-60)
   { name: 'Aishwarya',  gender: 'FEMALE' },
   { name: 'Divya',      gender: 'FEMALE' },
@@ -77,7 +72,6 @@ const FIRST_NAMES: { name: string; gender: 'MALE' | 'FEMALE' }[] = [
   { name: 'Keerthi',    gender: 'FEMALE' },
   { name: 'Anjali',     gender: 'FEMALE' },
   { name: 'Sowmya',     gender: 'FEMALE' },
-
   // East Indian - male (61-70)
   { name: 'Abir',       gender: 'MALE' },
   { name: 'Arnab',      gender: 'MALE' },
@@ -89,7 +83,6 @@ const FIRST_NAMES: { name: string; gender: 'MALE' | 'FEMALE' }[] = [
   { name: 'Prithvi',    gender: 'MALE' },
   { name: 'Anirban',    gender: 'MALE' },
   { name: 'Subhankar',  gender: 'MALE' },
-
   // East Indian - female (71-80)
   { name: 'Rupsa',      gender: 'FEMALE' },
   { name: 'Ishita',     gender: 'FEMALE' },
@@ -101,7 +94,6 @@ const FIRST_NAMES: { name: string; gender: 'MALE' | 'FEMALE' }[] = [
   { name: 'Mousumi',    gender: 'FEMALE' },
   { name: 'Anwesha',    gender: 'FEMALE' },
   { name: 'Bidisha',    gender: 'FEMALE' },
-
   // Muslim - male (81-90)
   { name: 'Mohammed',   gender: 'MALE' },
   { name: 'Abdul',      gender: 'MALE' },
@@ -113,7 +105,6 @@ const FIRST_NAMES: { name: string; gender: 'MALE' | 'FEMALE' }[] = [
   { name: 'Salman',     gender: 'MALE' },
   { name: 'Aamir',      gender: 'MALE' },
   { name: 'Bilal',      gender: 'MALE' },
-
   // Muslim - female (91-100)
   { name: 'Ayesha',     gender: 'FEMALE' },
   { name: 'Fatima',     gender: 'FEMALE' },
@@ -127,7 +118,6 @@ const FIRST_NAMES: { name: string; gender: 'MALE' | 'FEMALE' }[] = [
   { name: 'Zoya',       gender: 'FEMALE' },
 ];
 
-// Last names: 50 entries covering diverse Indian surnames.
 const LAST_NAMES: string[] = [
   'Sharma','Verma','Gupta','Singh','Yadav','Mishra','Agarwal','Chaudhary','Tiwari','Pandey',
   'Saxena','Bhatnagar','Srivastava','Khanna','Malhotra','Chopra','Kapoor','Iyer','Krishnan',
@@ -136,47 +126,49 @@ const LAST_NAMES: string[] = [
   'Banerjee','Chatterjee','Mukherjee','Ghosh','Bose','Dutta','Sengupta','Chakraborty','Das','Roy',
 ];
 
-// Gender lookup table keyed by first name.
 export const FIRST_NAME_GENDER: Record<string, 'MALE' | 'FEMALE'> = {};
 for (const f of FIRST_NAMES) FIRST_NAME_GENDER[f.name] = f.gender;
 
-// Generate 500 unique full names by walking the pools in a fixed nested loop.
+// Interleave: walk firsts and lasts on a diagonal so consecutive names differ
+// in the first-name component. Guarantees no two adjacent names share a first.
 const fullNames: string[] = [];
 const seen = new Set<string>();
-
-outer:
-for (let i = 0; i < FIRST_NAMES.length; i++) {
-  for (let j = 0; j < LAST_NAMES.length; j++) {
-    const fn = FIRST_NAMES[i].name;
-    const ln = LAST_NAMES[j];
-    const full = fn + ' ' + ln;
-    if (seen.has(full)) continue;
-    seen.add(full);
-    fullNames.push(full);
-    if (fullNames.length === 500) break outer;
+const N = 500;
+for (let i = 0; i < N; i++) {
+  const fi = i % FIRST_NAMES.length;
+  const li = (i * 7 + Math.floor(i / FIRST_NAMES.length)) % LAST_NAMES.length;
+  let attempt = 0;
+  let full = FIRST_NAMES[fi].name + ' ' + LAST_NAMES[li];
+  while (seen.has(full) && attempt < LAST_NAMES.length) {
+    attempt++;
+    full = FIRST_NAMES[fi].name + ' ' + LAST_NAMES[(li + attempt) % LAST_NAMES.length];
   }
+  seen.add(full);
+  fullNames.push(full);
 }
 
-if (fullNames.length !== 500) {
-  throw new Error('Expected 500 names, got ' + fullNames.length);
-}
+if (fullNames.length !== 500) throw new Error('Expected 500 names, got ' + fullNames.length);
 
 const outPath = path.resolve(__dirname, '..', 'database', 'data', 'employee-names.data.ts');
 const fileContent =
   '// ============================================================================\n' +
   '// NEXUS ENTERPRISE PLATFORM - 500 unique Indian employee names\n' +
   '// Generated once by scripts/generate-employee-names.ts (deterministic).\n' +
-  '// Do not edit by hand. Re-run the generator if the pools change.\n' +
   '// ============================================================================\n' +
   '\n' +
   'export const employeeNames: string[] = [\n' +
   fullNames.map((n) => "  '" + n + "',").join('\n') +
   '\n];\n' +
   '\n' +
-  '// Gender lookup keyed by first name.\n' +
   'export const firstNameGender: Record<string, "MALE" | "FEMALE"> = {\n' +
   Object.entries(FIRST_NAME_GENDER).map(([k, v]) => "  '" + k + "': '" + v + "',").join('\n') +
   '\n};\n';
 
 fs.writeFileSync(outPath, fileContent, { encoding: 'utf8' });
+
+const maleCount = fullNames.filter((n) => FIRST_NAME_GENDER[n.split(' ')[0]] === 'MALE').length;
+const femaleCount = fullNames.length - maleCount;
 console.log('Wrote ' + fullNames.length + ' names to ' + outPath);
+console.log('Gender: MALE=' + maleCount + ' FEMALE=' + femaleCount);
+console.log('First 10 names:');
+for (let i = 0; i < 10; i++) console.log('  ' + fullNames[i]);

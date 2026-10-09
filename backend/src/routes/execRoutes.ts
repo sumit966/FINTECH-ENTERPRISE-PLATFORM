@@ -1,0 +1,11 @@
+import { Router } from 'express';
+import { authenticate } from '../middleware/authMiddleware';
+import { requirePermission } from '../middleware/rbacMiddleware';
+import * as e from '../controllers/execController';
+const router = Router();
+router.use(authenticate);
+router.get('/snapshot',      requirePermission('analytics.read'), e.snapshot);
+router.get('/org-tree',      requirePermission('analytics.read'), e.orgTree);
+router.get('/revenue-trend', requirePermission('analytics.read'), e.revenueTrend);
+router.get('/risk-radar',    requirePermission('analytics.read'), e.riskRadar);
+export default router;

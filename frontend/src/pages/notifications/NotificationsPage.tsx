@@ -1,0 +1,157 @@
+import { useEffect, useState } from 'react';
+import { Bell, Check, CheckCheck, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Card, CardHeader, StatCard } from '../../components/ui/Card';
+import Button from '../../components/ui/Button';
+import Badge from '../../components/ui/Badge';
+import { SkeletonTable } from '../../components/ui/Skeleton';
+import ErrorState from '../../components/ui/ErrorState';
+import { notificationService, NotificationRow } from '../../services/notificationService';
+
+const TYPE_TONE: Record<string, 'brand' | 'success' | 'warn' | 'danger' | 'info' | 'neutral'> = {
+  LEAVE: 'success',
+  PAYROLL: 'brand',
+  INTERVIEW: 'info',
+  PROJECT: 'info',
+  SECURITY: 'danger',
+  INVOICE: 'warn',
+  DEADLINE: 'warn',
+  SYSTEM: 'neutral',
+};
+
+export default function NotificationsPage() {
+  const [data, setData] = useState<NotificationRow[]>([]);
+  const [total, setTotal] = useState(0);
+  const [unread, setUnread] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [page, setPage] = useState(1);
+  const [type, setType] = useState('');
+  const [isRead, setIsRead] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = async () => {
+    setLoading(true); setError(null);
+    try {
+      const r = await notificationService.list({
+        page, pageSize: 20,
+        type: type || undefined,
+        isRead: isRead || undefined,
+      });
+      setData(r.items);
+      setTotal(r.total);
+      setUnread(r.unreadCount);
+      setTotalPages(r.totalPages);
+    } catch (e: any) {
+      setError(e?.message || 'Failed to load notifications');
+    } finally { setLoading(false); }
+  };
+
+  useEffect(() => { load(); }, [page, type, isRead]);
+  useEffect(() => { setPage(1); }, [type, isRead]);
+
+  const markRead = async (id: string) => {
+    await notificationService.markRead(id);
+    load();
+  };
+  const markAllRead = async () => {
+    await notificationService.markAllRead();
+    load();
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Notifications</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Your alerts, approvals, and updates &middot; live from PostgreSQL
+          </p>
+        </div>
+        {unread > 0 && (
+          <Button variant="secondary" size="sm" onClick={markAllRead}>
+            <CheckCheck size={14} /> Mark all as read
+          </Button>
+        )}
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <StatCard label="Total" value={total} hint="All notifications" />
+        <StatCard label="Unread" value={unread} hint="Requires attention" />
+        <StatCard label="Read" value={total - unread} hint="Archived" />
+        <StatCard label="Types" value={new Set(data.map((n) => n.type)).size} hint="In current view" />
+      </div>
+
+      <Card padded={false} className="p-3">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+          <select value={type} onChange={(e) => setType(e.target.value)} className="rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-2 text-sm">
+            <option value="">All types</option>
+            <option value="LEAVE">Leave</option>
+            <option value="PAYROLL">Payroll</option>
+            <option value="INTERVIEW">Interview</option>
+            <option value="PROJECT">Project</option>
+            <option value="SECURITY">Security</option>
+            <option value="INVOICE">Invoice</option>
+            <option value="DEADLINE">Deadline</option>
+            <option value="SYSTEM">System</option>
+          </select>
+          <select value={isRead} onChange={(e) => setIsRead(e.target.value)} className="rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-2 text-sm">
+            <option value="">All</option>
+            <option value="false">Unread only</option>
+            <option value="true">Read only</option>
+          </select>
+        </div>
+      </Card>
+
+      {error ? <ErrorState message={error} onRetry={load} /> :
+       loading ? <SkeletonTable rows={6} /> : (
+        <Card padded={false}>
+          <div className="divide-y divide-slate-200 dark:divide-slate-800">
+            {data.length === 0 && (
+              <div className="p-8 text-center text-sm text-slate-500">
+                <Bell size={24} className="mx-auto text-slate-400 mb-2" />
+                No notifications match your filters.
+              </div>
+            )}
+            {data.map((n) => (
+              <div key={n.id} className={'flex items-start gap-3 p-4 ' + (n.isRead ? '' : 'bg-brand-500/5')}>
+                <div className={'h-8 w-8 rounded-full grid place-items-center shrink-0 ' + (n.isRead ? 'bg-slate-100 dark:bg-slate-800' : 'bg-brand-500/20')}>
+                  <Bell size={14} className={n.isRead ? 'text-slate-500' : 'text-brand-500'} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <span className="font-medium text-sm">{n.title}</span>
+                        <Badge tone={TYPE_TONE[n.type] || 'neutral'}>{n.type}</Badge>
+                        {!n.isRead && <span className="w-2 h-2 rounded-full bg-brand-500" />}
+                      </div>
+                      <div className="text-xs text-slate-500">{n.body}</div>
+                      <div className="text-[11px] text-slate-400 mt-1">
+                        {new Date(n.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
+                      </div>
+                    </div>
+                    {!n.isRead && (
+                      <Button variant="ghost" size="sm" onClick={() => markRead(n.id)}>
+                        <Check size={14} />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {total > 0 && (
+        <div className="flex items-center justify-between">
+          <div className="text-xs text-slate-500">Page {page} of {totalPages} &middot; {total} total</div>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}><ChevronLeft size={14} /> Prev</Button>
+            <Button variant="ghost" size="sm" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Next <ChevronRight size={14} /></Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

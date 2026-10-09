@@ -1,7 +1,7 @@
 // ============================================================================
-// NEXUS ENTERPRISE PLATFORM - 500 Employees (deterministic, fixed managers)
-// All fields computed from employee index using fixed formulas.
-// No Math.random, no Faker, no runtime randomness.
+// NEXUS ENTERPRISE PLATFORM - 500 Employees (deterministic)
+// Gender-inferred from first name; departments weighted across tech,
+// business, and corporate so all 32 departments get employees.
 // ============================================================================
 
 import { employeeNames, firstNameGender } from './employee-names.data';
@@ -40,14 +40,19 @@ export interface EmployeeData {
   teamLeadCode: string | null;
 }
 
-// ---- Fixed lookup tables --------------------------------------------------
-
-const LOCATION_CODES = ['PUNE', 'BLR', 'NOIDA'];
-
+// 100-slot department cycle: 65% technology, 20% business, 15% corporate.
 const DEPARTMENT_CYCLE = [
   'BE','FE','FS','AIML','DATA','CLOUD','DEVOPS','SEC','QA','ENG',
   'BE','FE','FS','BE','AIML','DATA','CLOUD','SRE','SEC','QA',
   'ENG','BE','FE','FS','MOB','BE','AIML','DATA','CLOUD','DEVOPS',
+  'BE','FE','FS','BE','AIML','DATA','CLOUD','SRE','SEC','QA',
+  'ENG','BE','FE','FS','MOB','BE','AIML','DATA','CLOUD','DEVOPS',
+  'BE','FE','FS','BE','AIML','DATA','CLOUD','DEVOPS','SEC','QA',
+  'ENG','BE','FS','BE','AIML',
+  'PM','PM','BA','BA','CONS','CONS','SALES','SALES','SALES','BD',
+  'BD','AM','AM','CS','CS','CS','PRE','PRE','PM','BA',
+  'HR','HR','HR','TA','TA','HROPS','FIN','FIN','FIN','ADMIN',
+  'LEGAL','PROC','OPS','IT','UX','ARCH','SUP',
 ];
 
 const TEAM_BY_DEPT: Record<string, string[]> = {
@@ -63,6 +68,26 @@ const TEAM_BY_DEPT: Record<string, string[]> = {
   SRE:    ['TEAM-SRE'],
   SEC:    ['TEAM-SEC'],
   QA:     ['TEAM-QA-1', 'TEAM-QA-2'],
+  UX:     ['TEAM-UX-1'],
+  ARCH:   ['TEAM-ARCH'],
+  SUP:    ['TEAM-SUP-1', 'TEAM-SUP-2'],
+  PM:     ['TEAM-PM-1', 'TEAM-PM-2'],
+  BA:     ['TEAM-BA-1'],
+  CONS:   ['TEAM-CONS'],
+  SALES:  ['TEAM-SALES-IN', 'TEAM-SALES-US', 'TEAM-SALES-EU'],
+  BD:     ['TEAM-BD'],
+  AM:     ['TEAM-AM'],
+  CS:     ['TEAM-CS-1', 'TEAM-CS-2'],
+  PRE:    ['TEAM-PRE'],
+  HR:     ['TEAM-HR-1', 'TEAM-HR-2'],
+  TA:     ['TEAM-TA-1', 'TEAM-TA-2'],
+  HROPS:  ['TEAM-HROPS'],
+  FIN:    ['TEAM-FIN-1', 'TEAM-FIN-2'],
+  ADMIN:  ['TEAM-ADMIN'],
+  LEGAL:  ['TEAM-LEGAL'],
+  PROC:   ['TEAM-PROC'],
+  OPS:    ['TEAM-OPS'],
+  IT:     ['TEAM-IT'],
 };
 
 function gradeFor(exp: number): string {
@@ -117,19 +142,28 @@ function joiningDateFor(idx: number): Date {
   return new Date(base + dayOffset * 24 * 3600 * 1000);
 }
 
-function experienceFor(idx: number): number {
-  return 1 + ((idx * 7) % 15);
-}
+function experienceFor(idx: number): number { return 1 + ((idx * 7) % 15); }
+function performanceFor(idx: number): number { return 3.0 + ((idx * 13) % 200) / 100; }
+function leaveBalanceFor(idx: number): number { return 8 + (idx % 17); }
 
-function performanceFor(idx: number): number {
-  return 3.0 + ((idx * 13) % 200) / 100;
-}
+// Gender inference: match the first name against the firstNameGender map,
+// or fall back to a heuristic (names ending in 'a' are typically female).
+function inferGender(fullName: string): Gender {
+  const first = fullName.split(' ')[0].toLowerCase();
 
-function leaveBalanceFor(idx: number): number {
-  return 8 + (idx % 17);
-}
+  // Direct lookup against firstNameGender (which is keyed by first name only).
+  for (const key of Object.keys(firstNameGender)) {
+    if (key.toLowerCase() === first) return firstNameGender[key] as Gender;
+  }
 
-// ---- Build the 500 employee records --------------------------------------
+  // Heuristic fallback: first names ending in 'a' or listed female-common.
+  const femaleEndings = ['a', 'i', 'ya', 'ika', 'ana', 'ita', 'shree', 'thra'];
+  for (const ending of femaleEndings) {
+    if (first.endsWith(ending)) return 'FEMALE';
+  }
+
+  return 'MALE';
+}
 
 export const employeesData: EmployeeData[] = [];
 
@@ -138,18 +172,14 @@ for (let i = 0; i < 500; i++) {
   const code = 'FITS-' + pad4(employeeNumber);
   const name = i === 0 ? 'Sumit Raj' : employeeNames[i - 1];
 
-  const firstName = name.split(' ')[0];
-  const gender: Gender = i === 0 ? 'MALE' : (firstNameGender[firstName] || 'MALE');
-
-  const locationCode = i === 0 ? 'PUNE' : LOCATION_CODES[i % 3];
+  const gender: Gender = i === 0 ? 'MALE' : inferGender(name);
+  const locationCode = i === 0 ? 'PUNE' : ['PUNE', 'BLR', 'NOIDA'][i % 3];
   const departmentCode = i === 0 ? 'ENG' : DEPARTMENT_CYCLE[i % DEPARTMENT_CYCLE.length];
 
   let teamCode: string | null = null;
   if (i !== 0) {
     const candidates = TEAM_BY_DEPT[departmentCode] || [];
-    if (candidates.length > 0) {
-      teamCode = candidates[i % candidates.length];
-    }
+    if (candidates.length > 0) teamCode = candidates[i % candidates.length];
   }
 
   const experience = i === 0 ? 8 : experienceFor(i);
@@ -196,8 +226,7 @@ for (let i = 0; i < 500; i++) {
   });
 }
 
-// ---- Manager and Team Lead assignment ------------------------------------
-// Group employees by team and department.
+// ---- Manager / Team Lead assignment --------------------------------------
 const byTeam: Record<string, EmployeeData[]> = {};
 const byDept: Record<string, EmployeeData[]> = {};
 
@@ -210,35 +239,23 @@ for (const e of employeesData) {
   byDept[e.departmentCode].push(e);
 }
 
-// One lead per team: the lowest-code member.
 const teamLeads: Record<string, string> = {};
 for (const teamCode of Object.keys(byTeam)) {
   teamLeads[teamCode] = byTeam[teamCode][0].employeeCode;
 }
 const allLeadCodes = new Set(Object.values(teamLeads));
 
-// One manager per department: prefer a non-lead who isn't the founder.
-// Excludes the founder from being a manager for any department.
 const deptManagers: Record<string, string> = {};
 for (const deptCode of Object.keys(byDept)) {
   const members = byDept[deptCode];
-  const nonLead = members.find(
-    (m) => !allLeadCodes.has(m.employeeCode) && m.employeeCode !== 'FITS-0001'
-  );
+  const nonLead = members.find((m) => !allLeadCodes.has(m.employeeCode) && m.employeeCode !== 'FITS-0001');
   const fallback = members.find((m) => m.employeeCode !== 'FITS-0001') || members[0];
   deptManagers[deptCode] = (nonLead || fallback).employeeCode;
 }
 
-// Assign manager + teamLead, with self-reference guard.
 for (const e of employeesData) {
-  // Founder has no manager.
-  if (e.employeeCode === 'FITS-0001') {
-    e.managerCode = null;
-    e.teamLeadCode = null;
-    continue;
-  }
+  if (e.employeeCode === 'FITS-0001') { e.managerCode = null; e.teamLeadCode = null; continue; }
 
-  // The four exec users (FITS-0002..FITS-0005) report directly to the founder.
   if (['FITS-0002', 'FITS-0003', 'FITS-0004', 'FITS-0005'].includes(e.employeeCode)) {
     e.managerCode = 'FITS-0001';
     e.teamLeadCode = null;
@@ -246,11 +263,7 @@ for (const e of employeesData) {
   }
 
   const isLead = e.teamCode ? teamLeads[e.teamCode] === e.employeeCode : false;
-
-  // Department manager for this employee's department.
   let mgr = deptManagers[e.departmentCode] || 'FITS-0002';
-
-  // Never self-reference.
   if (mgr === e.employeeCode) mgr = 'FITS-0001';
 
   if (isLead) {
@@ -265,29 +278,27 @@ for (const e of employeesData) {
   }
 }
 
-// ---- Final self-manager cleanup pass -------------------------------------
-// Belt and braces: if anything above still produced a self-reference, fix it.
+// Final self-manager cleanup
 for (const e of employeesData) {
-  if (e.managerCode === e.employeeCode) {
-    e.managerCode = e.employeeCode === 'FITS-0001' ? null : 'FITS-0001';
-  }
-  if (e.teamLeadCode === e.employeeCode) {
-    e.teamLeadCode = null;
-  }
+  if (e.managerCode === e.employeeCode) e.managerCode = e.employeeCode === 'FITS-0001' ? null : 'FITS-0001';
+  if (e.teamLeadCode === e.employeeCode) e.teamLeadCode = null;
 }
 
 // ---- Validation ----------------------------------------------------------
-
-if (employeesData.length !== 500) {
-  throw new Error('Expected 500 employees, got ' + employeesData.length);
-}
-
+if (employeesData.length !== 500) throw new Error('Expected 500 employees, got ' + employeesData.length);
 const codes = new Set(employeesData.map((e) => e.employeeCode));
 const emails = new Set(employeesData.map((e) => e.email));
 const names = new Set(employeesData.map((e) => e.fullName));
 const selfMgrs = employeesData.filter((e) => e.managerCode === e.employeeCode);
-
 if (codes.size !== 500) throw new Error('Duplicate employee codes');
 if (emails.size !== 500) throw new Error('Duplicate emails');
 if (names.size !== 500) throw new Error('Duplicate names');
 if (selfMgrs.length !== 0) throw new Error('Self-managed employees: ' + selfMgrs.length);
+
+// Diagnostic output
+const maleCount = employeesData.filter((e) => e.gender === 'MALE').length;
+const femaleCount = employeesData.filter((e) => e.gender === 'FEMALE').length;
+const deptSet = new Set(employeesData.map((e) => e.departmentCode));
+console.log('Employees generated:', employeesData.length);
+console.log('Gender: MALE=' + maleCount + ' FEMALE=' + femaleCount);
+console.log('Departments covered:', deptSet.size, '(' + Array.from(deptSet).sort().join(',') + ')');

@@ -1,0 +1,10 @@
+import { Router } from 'express';
+import { authenticate } from '../middleware/authMiddleware';
+import { requirePermission } from '../middleware/rbacMiddleware';
+import * as vendor from '../controllers/vendorController';
+const router = Router();
+router.use(authenticate);
+router.get('/summary', requirePermission('vendors.read'), vendor.summary);
+router.get('/purchase-orders', requirePermission('vendors.read'), vendor.purchaseOrders);
+router.get('/',        requirePermission('vendors.read'), vendor.list);
+export default router;
