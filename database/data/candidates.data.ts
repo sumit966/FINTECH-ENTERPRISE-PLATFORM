@@ -55,7 +55,7 @@ for (let j = 0; j < jobsData.length; j++) {
     const idx = j * CANDIDATES_PER_JOB + k;
     const name = candidateNameFor(idx);
     const parts = name.toLowerCase().split(' ');
-    const email = parts[0] + '.' + parts[1] + '.cand' + pad4(idx + 1) + '@example.com';
+    const email = parts[0] + '.' + parts[1] + '.cand' + pad4(idx + 1) + '@example.in';
 
     // Stage distribution: walk the STAGES array in a fixed pattern.
     // Early indices are more progressed (SELECTED / OFFER / JOINED), later ones

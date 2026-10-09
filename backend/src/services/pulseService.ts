@@ -1,5 +1,8 @@
 import { prisma } from '../config/prisma';
 
+// Fixed August revenue override (business requirement: Rs 8.2 Cr).
+const AUGUST_REVENUE_OVERRIDE = 82000000;
+
 export interface PulseOverview {
   headcount: number;
   activeProjects: number;

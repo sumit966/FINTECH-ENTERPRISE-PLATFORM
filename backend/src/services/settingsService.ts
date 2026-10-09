@@ -134,7 +134,7 @@ export function getAbout() {
   return {
     platform: 'Nexus Enterprise Platform',
     company: 'FINTECH IT SOLUTIONS',
-    founder: 'Sumit Raj',
+    founder: 'Sumit Kumar',
     headquarters: 'Pune, India',
     locations: ['Pune', 'Bangalore', 'Noida'],
     version: '1.0.0',

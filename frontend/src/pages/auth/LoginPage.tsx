@@ -15,18 +15,18 @@ interface DemoAccount {
 }
 
 const DEMO_ACCOUNTS: DemoAccount[] = [
-  { label: 'Founder & CEO',     email: 'founder@fintechitsolutions.example',      role: 'FOUNDER_CEO',        tone: 'brand' },
-  { label: 'Director',          email: 'director@fintechitsolutions.example',     role: 'DIRECTOR',           tone: 'brand' },
-  { label: 'HR Head',           email: 'hr.head@fintechitsolutions.example',      role: 'DEPT_HEAD',          tone: 'success' },
-  { label: 'Finance Manager',   email: 'finance.head@fintechitsolutions.example', role: 'FINANCE_MANAGER',    tone: 'success' },
-  { label: 'Engineering Head',  email: 'eng.head@fintechitsolutions.example',     role: 'ENGINEERING_MANAGER',tone: 'success' },
-  { label: 'Manager',           email: 'manager@fintechitsolutions.example',      role: 'MANAGER',            tone: 'info' },
-  { label: 'Team Lead',         email: 'lead@fintechitsolutions.example',         role: 'TEAM_LEAD',          tone: 'info' },
-  { label: 'Recruiter',         email: 'recruiter@fintechitsolutions.example',    role: 'RECRUITER',          tone: 'info' },
-  { label: 'Engineer',          email: 'engineer@fintechitsolutions.example',     role: 'ENGINEER',           tone: 'neutral' },
-  { label: 'QA Engineer',       email: 'qa@fintechitsolutions.example',           role: 'QA',                 tone: 'neutral' },
-  { label: 'Employee',          email: 'employee@fintechitsolutions.example',     role: 'EMPLOYEE',           tone: 'neutral' },
-  { label: 'Auditor',           email: 'auditor@fintechitsolutions.example',      role: 'AUDITOR',            tone: 'warn' },
+  { label: 'Founder & CEO',     email: 'founder@fintechitsolutions.in',      role: 'FOUNDER_CEO',        tone: 'brand' },
+  { label: 'Director',          email: 'director@fintechitsolutions.in',     role: 'DIRECTOR',           tone: 'brand' },
+  { label: 'HR Head',           email: 'hr.head@fintechitsolutions.in',      role: 'DEPT_HEAD',          tone: 'success' },
+  { label: 'Finance Manager',   email: 'finance.head@fintechitsolutions.in', role: 'FINANCE_MANAGER',    tone: 'success' },
+  { label: 'Engineering Head',  email: 'eng.head@fintechitsolutions.in',     role: 'ENGINEERING_MANAGER',tone: 'success' },
+  { label: 'Manager',           email: 'manager@fintechitsolutions.in',      role: 'MANAGER',            tone: 'info' },
+  { label: 'Team Lead',         email: 'lead@fintechitsolutions.in',         role: 'TEAM_LEAD',          tone: 'info' },
+  { label: 'Recruiter',         email: 'recruiter@fintechitsolutions.in',    role: 'RECRUITER',          tone: 'info' },
+  { label: 'Engineer',          email: 'engineer@fintechitsolutions.in',     role: 'ENGINEER',           tone: 'neutral' },
+  { label: 'QA Engineer',       email: 'qa@fintechitsolutions.in',           role: 'QA',                 tone: 'neutral' },
+  { label: 'Employee',          email: 'employee@fintechitsolutions.in',     role: 'EMPLOYEE',           tone: 'neutral' },
+  { label: 'Auditor',           email: 'auditor@fintechitsolutions.in',      role: 'AUDITOR',            tone: 'warn' },
 ];
 
 const DEMO_PASSWORD = 'Nexus@2024!';
@@ -36,7 +36,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation() as { state?: { from?: { pathname: string } } };
 
-  const [email, setEmail] = useState('founder@fintechitsolutions.example');
+  const [email, setEmail] = useState('founder@fintechitsolutions.in');
   const [password, setPassword] = useState(DEMO_PASSWORD);
 
   const submit = async (e: FormEvent) => {
@@ -67,7 +67,7 @@ export default function LoginPage() {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@fintechitsolutions.example"
+            placeholder="you@fintechitsolutions.in"
             autoComplete="username"
             required
           />
@@ -76,7 +76,7 @@ export default function LoginPage() {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
+            placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
             autoComplete="current-password"
             required
           />

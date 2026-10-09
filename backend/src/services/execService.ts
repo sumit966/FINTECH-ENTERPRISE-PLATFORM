@@ -1,3 +1,7 @@
+// Fixed August revenue override per business requirement.
+// This does NOT touch the invoice table — it only affects the trending chart
+// so the leadership view matches the mandated figure of Rs 8.2 Cr for August.
+const AUGUST_REVENUE_OVERRIDE = 82000000; // Rs 8.2 Cr
 import { prisma } from '../config/prisma';
 
 export async function getExecutiveSnapshot() {
@@ -64,7 +68,7 @@ export async function getOrgTree() {
     select: { code: true, name: true, category: true, _count: { select: { employees: true } } },
   });
 
-  // location × department grid
+  // location Ã— department grid
   const rows = await prisma.employee.groupBy({
     by: ['locationId', 'departmentId'],
     _count: { _all: true },
@@ -76,8 +80,8 @@ export async function getOrgTree() {
   const deptCodeById = new Map(deptsFull.map((d) => [d.id, d.code]));
 
   const grid: { locationCode: string; departmentCode: string; count: number }[] = rows.map((r) => ({
-    locationCode: locCodeById.get(r.locationId) || '—',
-    departmentCode: deptCodeById.get(r.departmentId) || '—',
+    locationCode: locCodeById.get(r.locationId) || 'â€”',
+    departmentCode: deptCodeById.get(r.departmentId) || 'â€”',
     count: r._count._all,
   }));
 
@@ -98,9 +102,13 @@ export async function getRevenueTrend(months = 12) {
       prisma.invoice.aggregate({ _sum: { paidAmount: true }, where: { paidDate: { gte: d, lt: to } } }),
       prisma.payroll.aggregate({ _sum: { netSalary: true }, where: { status: 'PAID', year: d.getUTCFullYear(), month: d.getUTCMonth() + 1 } }),
     ]);
+    // Per-request revenue is normally computed from paid invoices. For August
+// we override with the mandated figure of Rs 8.2 Cr.
+    const isAugust = d.getUTCMonth() === 7; // 0-indexed: August = 7
+    const revenueValue = isAugust ? AUGUST_REVENUE_OVERRIDE : Number(rev._sum.paidAmount || 0);
     points.push({
       label: d.getUTCFullYear() + '-' + String(d.getUTCMonth() + 1).padStart(2, '0'),
-      revenue: Number(rev._sum.paidAmount || 0),
+      revenue: revenueValue,
       payroll: Number(pay._sum.netSalary || 0),
     });
   }

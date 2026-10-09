@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, ExternalLink, GitBranch, Rocket } from 'lucide-react';
+import { ArrowLeft, ExternalLink, GitBranch, Rocket, Users, Calendar, DollarSign, AlertTriangle, Target, CheckCircle2 } from 'lucide-react';
 import { Card, CardHeader, StatCard } from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import StatusBadge from '../../components/ui/StatusBadge';
@@ -14,7 +14,8 @@ function formatINR(v: number): string {
   if (v >= 100000) return '\u20B9' + (v / 100000).toFixed(2) + ' L';
   return '\u20B9' + v.toLocaleString('en-IN');
 }
-function formatDate(d: string): string {
+function formatDate(d: string | null): string {
+  if (!d) return '\u2014';
   return new Date(d).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
@@ -23,6 +24,7 @@ export default function ProjectDetailPage() {
   const [p, setP] = useState<ProjectDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'overview' | 'members' | 'tasks' | 'milestones' | 'risks' | 'invoices' | 'deployments'>('overview');
 
   const load = async () => {
     if (!code) return;
@@ -39,7 +41,7 @@ export default function ProjectDetailPage() {
 
   const memberCols: Column<ProjectDetail['members'][0]>[] = [
     { key: 'code', header: 'Code', render: (r) => <span className="font-mono text-xs">{r.employeeCode}</span> },
-    { key: 'name', header: 'Name', render: (r) => <Link className="hover:text-brand-500" to={'/employees/' + r.employeeId}>{r.fullName}</Link> },
+    { key: 'name', header: 'Name', render: (r) => <Link className="hover:text-brand-500 font-medium" to={'/employees/' + r.employeeId}>{r.fullName}</Link> },
     { key: 'email', header: 'Email', render: (r) => <span className="text-xs text-slate-500">{r.email}</span> },
     { key: 'role', header: 'Role', render: (r) => <Badge tone="brand">{r.role}</Badge> },
     { key: 'alloc', header: 'Allocation', className: 'text-right', render: (r) => <span className="text-xs">{r.allocation}%</span> },
@@ -52,6 +54,7 @@ export default function ProjectDetailPage() {
     { key: 'status', header: 'Status', render: (r) => <StatusBadge status={r.status} /> },
     { key: 'est', header: 'Estimate', className: 'text-right', render: (r) => <span className="text-xs">{r.estimateHrs ?? '\u2014'}h</span> },
     { key: 'spent', header: 'Spent', className: 'text-right', render: (r) => <span className="text-xs">{r.spentHrs ?? '\u2014'}h</span> },
+    { key: 'due', header: 'Due', render: (r) => <span className="text-xs">{formatDate(r.dueDate)}</span> },
   ];
 
   const invoiceCols: Column<ProjectDetail['invoices'][0]>[] = [
@@ -63,25 +66,48 @@ export default function ProjectDetailPage() {
     { key: 'status', header: 'Status', render: (r) => <StatusBadge status={r.status} /> },
   ];
 
+  const tasksDone = p.tasks.filter((t) => t.status === 'DONE').length;
+  const milestonesDone = p.milestones.filter((m) => m.status === 'COMPLETED').length;
+  const totalPaid = p.invoices.reduce((s, i) => s + i.paidAmount, 0);
+  const totalInvoiced = p.invoices.reduce((s, i) => s + i.total, 0);
+
+  const tabs: { key: typeof activeTab; label: string; count: number }[] = [
+    { key: 'overview',     label: 'Overview',     count: 0 },
+    { key: 'members',      label: 'Members',      count: p.members.length },
+    { key: 'tasks',        label: 'Tasks',        count: p.tasks.length },
+    { key: 'milestones',   label: 'Milestones',   count: p.milestones.length },
+    { key: 'risks',        label: 'Risks',        count: p.risks.length },
+    { key: 'invoices',     label: 'Invoices',     count: p.invoices.length },
+    { key: 'deployments',  label: 'Deployments',  count: p.deployments.length },
+  ];
+
   return (
     <div className="space-y-6">
       <Link to="/projects" className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-200">
         <ArrowLeft size={14} /> Back to projects
       </Link>
 
+      {/* Header */}
       <Card>
         <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
+          <div className="flex-1 min-w-0">
             <div className="text-xs font-mono text-slate-500 mb-1">{p.projectCode}</div>
             <h1 className="text-2xl font-semibold tracking-tight">{p.name}</h1>
             <div className="text-sm text-slate-500 mt-1">
-              {p.industry} &middot; {p.country} &middot; Client: <Link to={'/clients/' + p.client.clientCode} className="text-brand-500 hover:underline">{p.client.companyName}</Link>
+              {p.industry} &middot; {p.country}
+              {p.client && (
+                <>
+                  {' \u00B7 Client: '}
+                  <Link to={'/clients/' + p.client.clientCode} className="text-brand-500 hover:underline">{p.client.companyName}</Link>
+                </>
+              )}
             </div>
             <div className="flex items-center gap-2 mt-3 flex-wrap">
               <StatusBadge status={p.status} />
               <Badge tone="brand">{p.progressPercent}% complete</Badge>
               {p.healthScore != null && <Badge tone={p.healthScore >= 4.2 ? 'success' : p.healthScore >= 3.5 ? 'warn' : 'danger'}>Health {p.healthScore.toFixed(2)}</Badge>}
               {p.riskScore != null && <Badge tone={p.riskScore >= 2.5 ? 'danger' : p.riskScore >= 1.8 ? 'warn' : 'success'}>Risk {p.riskScore.toFixed(2)}</Badge>}
+              <Badge tone="neutral">{p.environment}</Badge>
             </div>
           </div>
           {p.repository && (
@@ -92,102 +118,227 @@ export default function ProjectDetailPage() {
         </div>
       </Card>
 
+      {/* Top stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard label="Budget" value={formatINR(p.budget)} hint={formatINR(p.cost) + ' spent'} />
         <StatCard label="Revenue" value={formatINR(p.revenue)} hint={formatINR(p.profit) + ' profit'} />
-        <StatCard label="Timeline" value={formatDate(p.startDate) + ' \u2192 ' + formatDate(p.expectedEndDate)} hint={p.actualEndDate ? 'Actual: ' + formatDate(p.actualEndDate) : 'In progress'} />
-        <StatCard label="Team" value={p.members.length} hint={p.projectManager ? 'PM: ' + p.projectManager.fullName : 'No PM'} />
+        <StatCard label="Timeline" value={formatDate(p.startDate) + ' \u2192 ' + formatDate(p.expectedEndDate)} hint={p.actualEndDate ? 'Delivered ' + formatDate(p.actualEndDate) : 'In progress'} />
+        <StatCard label="Team" value={p.members.length} hint={p.projectManager ? 'PM: ' + p.projectManager.fullName : 'No PM assigned'} />
       </div>
 
-      <Card>
-        <CardHeader title="Tech Stack" subtitle="Architecture and integrations" />
-        <div className="flex flex-wrap gap-4">
-          {[
-            { label: 'Frontend', items: p.techFrontend },
-            { label: 'Backend', items: p.techBackend },
-            { label: 'Database', items: p.techDatabase },
-            { label: 'Cloud', items: p.techCloud },
-            { label: 'AI/ML', items: p.techAI },
-            { label: 'Integrations', items: p.integrations },
-          ].map((g) => g.items.length > 0 && (
-            <div key={g.label}>
-              <div className="text-[10px] uppercase tracking-wider text-slate-500 mb-1">{g.label}</div>
-              <div className="flex flex-wrap gap-1.5">
-                {g.items.map((t) => <Badge key={t} tone="brand">{t}</Badge>)}
-              </div>
+      {/* Tab navigation */}
+      <div className="flex items-center gap-1 border-b border-slate-200 dark:border-slate-800 overflow-x-auto">
+        {tabs.map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setActiveTab(t.key)}
+            className={'px-4 py-2 text-sm font-medium border-b-2 whitespace-nowrap ' + (activeTab === t.key ? 'border-brand-500 text-brand-500' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-200')}
+          >
+            {t.label}
+            {t.count > 0 && <span className="ml-2 text-xs rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5">{t.count}</span>}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab content */}
+      {activeTab === 'overview' && (
+        <div className="space-y-4">
+          <Card>
+            <CardHeader title="Tech Stack" subtitle="Architecture and integrations" />
+            <div className="flex flex-wrap gap-6">
+              {[
+                { label: 'Frontend', items: p.techFrontend },
+                { label: 'Backend', items: p.techBackend },
+                { label: 'Database', items: p.techDatabase },
+                { label: 'Cloud', items: p.techCloud },
+                { label: 'AI/ML', items: p.techAI },
+                { label: 'Integrations', items: p.integrations },
+              ].map((g) => g.items.length > 0 && (
+                <div key={g.label}>
+                  <div className="text-[10px] uppercase tracking-wider text-slate-500 mb-2">{g.label}</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {g.items.map((t) => <Badge key={t} tone="brand">{t}</Badge>)}
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
+          </Card>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <Card>
+              <CardHeader title="Progress" subtitle="Milestones and tasks" />
+              <div className="space-y-3">
+                <div>
+                  <div className="flex justify-between text-xs mb-1"><span className="text-slate-500">Overall</span><span className="font-medium">{p.progressPercent}%</span></div>
+                  <div className="h-2 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+                    <div className="h-full bg-brand-500" style={{ width: p.progressPercent + '%' }} />
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 text-xs">
+                  <Target size={14} className="text-slate-400" />
+                  <span className="text-slate-500">Milestones</span>
+                  <span className="font-medium ml-auto">{milestonesDone} / {p.milestones.length}</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs">
+                  <CheckCircle2 size={14} className="text-slate-400" />
+                  <span className="text-slate-500">Tasks done</span>
+                  <span className="font-medium ml-auto">{tasksDone} / {p.tasks.length}</span>
+                </div>
+              </div>
+            </Card>
+
+            <Card>
+              <CardHeader title="Financials" subtitle="Invoiced vs paid" />
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-xs">
+                  <DollarSign size={14} className="text-slate-400" />
+                  <span className="text-slate-500">Invoiced</span>
+                  <span className="font-medium ml-auto">{formatINR(totalInvoiced)}</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs">
+                  <DollarSign size={14} className="text-emerald-500" />
+                  <span className="text-slate-500">Paid</span>
+                  <span className="font-medium ml-auto">{formatINR(totalPaid)}</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs">
+                  <DollarSign size={14} className="text-rose-500" />
+                  <span className="text-slate-500">Outstanding</span>
+                  <span className="font-medium ml-auto">{formatINR(totalInvoiced - totalPaid)}</span>
+                </div>
+              </div>
+            </Card>
+
+            <Card>
+              <CardHeader title="Meta" subtitle="Classification" />
+              <div className="space-y-3 text-xs">
+                <div className="flex justify-between"><span className="text-slate-500">API Style</span><span className="font-medium">{p.apiStyle || '\u2014'}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Security</span><StatusBadge status={p.securityStatus} /></div>
+                <div className="flex justify-between"><span className="text-slate-500">QA</span><StatusBadge status={p.qaStatus} /></div>
+                <div className="flex justify-between"><span className="text-slate-500">Location</span><span className="font-medium">{p.location?.city || '\u2014'}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Team</span><span className="font-medium">{p.team?.name || '\u2014'}</span></div>
+              </div>
+            </Card>
+          </div>
+
+          {p.projectManager && (
+            <Card>
+              <CardHeader title="Project Manager" subtitle="Accountability" />
+              <div className="flex items-center gap-3">
+                <div className="h-12 w-12 rounded-full bg-brand-500 text-white grid place-items-center font-semibold">
+                  {p.projectManager.fullName.split(' ').map((x) => x[0]).slice(0,2).join('').toUpperCase()}
+                </div>
+                <div>
+                  <Link to={'/employees/' + p.projectManager.id} className="font-medium hover:text-brand-500">{p.projectManager.fullName}</Link>
+                  <div className="text-xs text-slate-500">{p.projectManager.employeeCode} &middot; {p.projectManager.email}</div>
+                </div>
+              </div>
+            </Card>
+          )}
         </div>
-      </Card>
+      )}
 
-      <Card>
-        <CardHeader title="Team Members" subtitle={p.members.length + ' people on this project'} />
-        <Table columns={memberCols} data={p.members} rowKey={(r) => r.id} emptyMessage="No members" />
-      </Card>
+      {activeTab === 'members' && (
+        <Card>
+          <CardHeader title="Team Members" subtitle={p.members.length + ' people on this project'} />
+          <Table columns={memberCols} data={p.members} rowKey={(r) => r.id} emptyMessage="No members" />
+        </Card>
+      )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      {activeTab === 'tasks' && (
+        <Card>
+          <CardHeader title="Tasks" subtitle={p.tasks.length + ' tasks'} />
+          <Table columns={taskCols} data={p.tasks} rowKey={(r) => r.id} emptyMessage="No tasks" />
+        </Card>
+      )}
+
+      {activeTab === 'milestones' && (
         <Card>
           <CardHeader title="Milestones" subtitle={p.milestones.length + ' milestones'} />
           <div className="space-y-3">
             {p.milestones.map((m) => (
-              <div key={m.id} className="flex items-start gap-3">
-                <div className={'mt-0.5 h-3 w-3 rounded-full shrink-0 ' + (m.status === 'COMPLETED' ? 'bg-emerald-500' : m.status === 'IN_PROGRESS' ? 'bg-amber-500' : m.status === 'DELAYED' ? 'bg-rose-500' : 'bg-slate-300')} />
+              <div key={m.id} className="flex items-start gap-3 p-3 rounded-md border border-slate-200 dark:border-slate-800">
+                <div className={'mt-1 h-3 w-3 rounded-full shrink-0 ' + (m.status === 'COMPLETED' ? 'bg-emerald-500' : m.status === 'IN_PROGRESS' ? 'bg-amber-500' : m.status === 'DELAYED' ? 'bg-rose-500' : 'bg-slate-300')} />
                 <div className="flex-1">
                   <div className="text-sm font-medium">{m.title}</div>
-                  <div className="text-xs text-slate-500">
+                  <div className="text-xs text-slate-500 mt-1">
                     Due {formatDate(m.dueDate)}
                     {m.completedAt && ' \u00B7 Completed ' + formatDate(m.completedAt)}
-                    <span className="ml-2"><StatusBadge status={m.status} /></span>
                   </div>
                 </div>
+                <StatusBadge status={m.status} />
               </div>
             ))}
+            {p.milestones.length === 0 && <div className="text-xs text-slate-500">No milestones</div>}
           </div>
         </Card>
+      )}
+
+      {activeTab === 'risks' && (
         <Card>
-          <CardHeader title="Risks" subtitle={p.risks.length + ' on register'} />
+          <CardHeader title="Risks Register" subtitle={p.risks.length + ' on register'} />
           <div className="space-y-3">
             {p.risks.map((r) => (
-              <div key={r.id} className="text-sm">
-                <div className="flex items-center gap-2">
+              <div key={r.id} className="rounded-md border border-slate-200 dark:border-slate-800 p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <AlertTriangle size={14} className="text-amber-500" />
+                  <span className="font-medium text-sm">{r.title}</span>
                   <StatusBadge status={r.severity} />
-                  <span className="font-medium">{r.title}</span>
+                  <StatusBadge status={r.status} />
                 </div>
-                <div className="text-xs text-slate-500 mt-0.5">{r.description}</div>
-                <div className="text-xs text-slate-400 mt-1">Mitigation: {r.mitigation}</div>
+                <div className="text-xs text-slate-500 mb-2">{r.description}</div>
+                <div className="text-xs text-slate-400 italic">Mitigation: {r.mitigation}</div>
               </div>
             ))}
-            {p.risks.length === 0 && <div className="text-xs text-slate-500">No risks on register</div>}
+            {p.risks.length === 0 && <div className="text-xs text-slate-500">No risks registered</div>}
           </div>
         </Card>
-      </div>
+      )}
 
-      <Card>
-        <CardHeader title="Tasks" subtitle={p.tasks.length + ' tasks'} />
-        <Table columns={taskCols} data={p.tasks} rowKey={(r) => r.id} emptyMessage="No tasks" />
-      </Card>
-
-      <Card>
-        <CardHeader title="Invoices" subtitle={p.invoices.length + ' invoices'} />
-        <Table columns={invoiceCols} data={p.invoices} rowKey={(r) => r.id} emptyMessage="No invoices" />
-      </Card>
-
-      {p.deployments.length > 0 && (
+      {activeTab === 'invoices' && (
         <Card>
-          <CardHeader title="Recent Deployments" subtitle="Last 10" />
+          <CardHeader title="Invoices" subtitle={p.invoices.length + ' invoices'} />
+          <Table columns={invoiceCols} data={p.invoices} rowKey={(r) => r.id} emptyMessage="No invoices" />
+        </Card>
+      )}
+
+      {activeTab === 'deployments' && (
+        <Card>
+          <CardHeader title="Deployments" subtitle={p.deployments.length + ' deployments'} />
           <div className="space-y-2">
             {p.deployments.map((d) => (
-              <div key={d.id} className="flex items-center justify-between text-sm">
+              <div key={d.id} className="flex items-center justify-between text-sm p-3 rounded-md border border-slate-200 dark:border-slate-800">
                 <div className="flex items-center gap-2">
                   <Rocket size={14} className="text-slate-400" />
                   <span className="font-mono text-xs">{d.deploymentCode}</span>
-                  <Badge tone="neutral">{d.environment}</Badge>
+                  <Badge tone={d.environment === 'PROD' ? 'success' : d.environment === 'STAGING' ? 'info' : 'neutral'}>{d.environment}</Badge>
                   <span className="text-xs text-slate-500">v{d.version}</span>
                 </div>
                 <div className="flex items-center gap-3 text-xs text-slate-500">
                   <StatusBadge status={d.status} />
                   <span>{formatDate(d.deployedAt)}</span>
                 </div>
+              </div>
+            ))}
+            {p.deployments.length === 0 && <div className="text-xs text-slate-500">No deployments</div>}
+          </div>
+        </Card>
+      )}
+
+      {/* Related repos */}
+      {p.repositories.length > 0 && (
+        <Card>
+          <CardHeader title="Repositories" subtitle={p.repositories.length + ' linked'} />
+          <div className="space-y-2">
+            {p.repositories.map((r) => (
+              <div key={r.id} className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-2">
+                  <GitBranch size={14} className="text-slate-400" />
+                  <Link to={'/engineering/repos/' + r.repoCode} className="font-mono text-xs hover:text-brand-500">{r.repoCode}</Link>
+                  <Badge tone="brand">{r.language}</Badge>
+                </div>
+                <a href={r.url} target="_blank" rel="noopener noreferrer" className="text-xs text-brand-500 hover:underline inline-flex items-center gap-1">
+                  Open <ExternalLink size={11} />
+                </a>
               </div>
             ))}
           </div>

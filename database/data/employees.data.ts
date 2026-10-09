@@ -117,12 +117,12 @@ function pad2(n: number): string { return String(n).padStart(2, '0'); }
 
 function emailFor(name: string, code: string): string {
   const parts = name.toLowerCase().split(' ');
-  return parts[0] + '.' + parts[1] + '.' + code.slice(-4) + '@fintechitsolutions.example';
+  return parts[0] + '.' + parts[1] + '.' + code.slice(-4) + '@fintechitsolutions.in';
 }
 
 function personalEmailFor(name: string, code: string): string {
   const parts = name.toLowerCase().split(' ');
-  return parts[0] + parts[1] + code.slice(-2) + '@gmail.example';
+  return parts[0] + parts[1] + code.slice(-2) + '@gmail.in';
 }
 
 function phoneFor(idx: number): string {
@@ -170,7 +170,7 @@ export const employeesData: EmployeeData[] = [];
 for (let i = 0; i < 500; i++) {
   const employeeNumber = i + 1;
   const code = 'FITS-' + pad4(employeeNumber);
-  const name = i === 0 ? 'Sumit Raj' : employeeNames[i - 1];
+  const name = i === 0 ? 'Sumit Kumar' : employeeNames[i - 1];
 
   const gender: Gender = i === 0 ? 'MALE' : inferGender(name);
   const locationCode = i === 0 ? 'PUNE' : ['PUNE', 'BLR', 'NOIDA'][i % 3];
@@ -199,7 +199,7 @@ for (let i = 0; i < 500; i++) {
     employeeCode: code,
     fullName: name,
     gender,
-    email: i === 0 ? 'founder@fintechitsolutions.example' : emailFor(name, code),
+    email: i === 0 ? 'founder@fintechitsolutions.in' : emailFor(name, code),
     personalEmail: personalEmailFor(name, code),
     phone: phoneFor(i),
     dateOfBirth: dobFor(i),

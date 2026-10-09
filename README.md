@@ -1,5 +1,5 @@
-﻿# NEXUS ENTERPRISE PLATFORM
+# NEXUS ENTERPRISE PLATFORM
 FINTECH IT SOLUTIONS
-Founder & CEO: Sumit Raj
+Founder & CEO: Sumit Kumar
 Locations: Pune, Bangalore, Noida
 Employees: 500
