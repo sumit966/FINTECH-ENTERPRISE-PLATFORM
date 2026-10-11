@@ -1,15 +1,10 @@
-import HeroBackground from '../../components/layout/HeroBackground';
-﻿import { useEffect, useState } from 'react';
+﻿import HeroBackground from '../../components/layout/HeroBackground';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, FolderKanban, TrendingUp, ShieldAlert, Landmark, Briefcase } from 'lucide-react';
-import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend,
-} from 'recharts';
-import { Card, CardHeader, StatCard } from '../../components/ui/Card';
-import Table, { Column } from '../../components/ui/Table';
+import { Users, FolderKanban, TrendingUp, ShieldAlert, ArrowRight, MapPin, Activity, DollarSign } from 'lucide-react';
+import { Card, CardHeader } from '../../components/ui/Card';
 import StatusBadge from '../../components/ui/StatusBadge';
-import { SkeletonCard, SkeletonTable } from '../../components/ui/Skeleton';
+import { SkeletonCard } from '../../components/ui/Skeleton';
 import ErrorState from '../../components/ui/ErrorState';
 import {
   pulseService,
@@ -20,7 +15,18 @@ import {
   TopClient,
 } from '../../services/pulseService';
 
-const CHART_COLORS = ['#3358ff', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#64748b', '#eab308', '#ec4899'];
+const STATUS_TONE: Record<string, string> = {
+  PLANNING:  'from-slate-400 to-slate-500',
+  ACTIVE:    'from-emerald-400 to-emerald-600',
+  ON_HOLD:   'from-amber-400 to-amber-600',
+  QA:        'from-violet-400 to-violet-600',
+  DEPLOYMENT:'from-cyan-400 to-cyan-600',
+  DELIVERED: 'from-brand-400 to-brand-600',
+  MAINTENANCE:'from-teal-400 to-teal-600',
+  CLOSED:    'from-slate-500 to-slate-700',
+  AT_RISK:   'from-rose-400 to-rose-600',
+  PENDING:   'from-amber-400 to-amber-500',
+};
 
 function formatINR(v: number): string {
   if (v >= 10000000) return '\u20B9' + (v / 10000000).toFixed(2) + ' Cr';
@@ -35,84 +41,32 @@ export default function FounderCommandCenter() {
   const [byStatus, setByStatus] = useState<ProjectStatusCount[]>([]);
   const [recent, setRecent] = useState<RecentProject[]>([]);
   const [topClients, setTopClients] = useState<TopClient[]>([]);
-
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const load = async () => {
-    setLoading(true);
-    setError(null);
+    setLoading(true); setError(null);
     try {
       const [o, loc, st, rp, tc] = await Promise.all([
         pulseService.overview(),
         pulseService.headcountByLocation(),
         pulseService.projectsByStatus(),
-        pulseService.recentProjects(8),
+        pulseService.recentProjects(6),
         pulseService.topClients(5),
       ]);
-      setOverview(o);
-      setByLocation(loc);
-      setByStatus(st);
-      setRecent(rp);
-      setTopClients(tc);
+      setOverview(o); setByLocation(loc); setByStatus(st); setRecent(rp); setTopClients(tc);
     } catch (e: any) {
       setError(e?.message || 'Failed to load dashboard');
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   useEffect(() => { load(); }, []);
 
   if (error) return <ErrorState message={error} onRetry={load} />;
 
-  const locChartData = byLocation.map((l) => ({ name: l.code, label: l.name, value: l.count }));
-  const statusChartData = byStatus.map((s) => ({ status: s.status, display: s.status.replace(/_/g, ' '), count: s.count }));
-
-  const projectCols: Column<RecentProject>[] = [
-    { key: 'code', header: 'Code', render: (r) => <span className="font-mono text-xs">{r.projectCode}</span> },
-    { key: 'name', header: 'Project', render: (r) => <span className="font-medium">{r.name}</span> },
-    { key: 'client', header: 'Client', render: (r) => (
-      <span className="text-xs text-slate-500">
-        {r.clientName} <span className="opacity-60">{'\u00B7'} {r.clientCountry}</span>
-      </span>
-    ) },
-    { key: 'status', header: 'Status', render: (r) => <StatusBadge status={r.status} /> },
-    { key: 'progress', header: 'Progress', render: (r) => (
-      <div className="flex items-center gap-2 w-32">
-        <div className="flex-1 h-1.5 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
-          <div className="h-full bg-brand-500" style={{ width: r.progress + '%' }} />
-        </div>
-        <span className="text-xs text-slate-500 w-9 text-right">{r.progress}%</span>
-      </div>
-    ) },
-    { key: 'health', header: 'Health', render: (r) => (
-      <span className={'text-xs font-medium ' + (r.health >= 4.2 ? 'text-emerald-500' : r.health >= 3.5 ? 'text-amber-500' : 'text-rose-500')}>
-        {r.health.toFixed(2)}
-      </span>
-    ) },
-    { key: 'risk', header: 'Risk', render: (r) => (
-      <span className={'text-xs font-medium ' + (r.risk >= 2.5 ? 'text-rose-500' : r.risk >= 1.8 ? 'text-amber-500' : 'text-emerald-500')}>
-        {r.risk.toFixed(2)}
-      </span>
-    ) },
-    { key: 'revenue', header: 'Revenue', className: 'text-right', render: (r) => (
-      <span className="text-xs font-medium">{formatINR(r.revenue)}</span>
-    ) },
-  ];
-
-  const clientCols: Column<TopClient>[] = [
-    { key: 'code', header: 'Code', render: (r) => <span className="font-mono text-xs">{r.clientCode}</span> },
-    { key: 'company', header: 'Client', render: (r) => (
-      <div>
-        <div className="font-medium text-sm">{r.companyName}</div>
-        <div className="text-[11px] text-slate-500">{r.country} {'\u00B7'} {r.industry}</div>
-      </div>
-    ) },
-    { key: 'tier', header: 'SLA', render: (r) => <StatusBadge status={r.slaTier} /> },
-    { key: 'projects', header: 'Projects', className: 'text-right', render: (r) => <span className="text-xs">{r.projectCount}</span> },
-    { key: 'revenue', header: 'Revenue', className: 'text-right', render: (r) => <span className="text-xs font-medium">{formatINR(r.revenue)}</span> },
-  ];
+  const totalHeadcount = overview?.headcount || 1;
+  const totalProjectCount = byStatus.reduce((s, x) => s + x.count, 0) || 1;
+  const maxClientRevenue = Math.max(1, ...topClients.map((c) => c.revenue));
 
   return (
     <div className="space-y-6">
@@ -124,138 +78,302 @@ export default function FounderCommandCenter() {
           </div>
         </div>
       </HeroBackground>
+
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Founder Command Center</h1>
+        <div className="text-[10px] uppercase tracking-[0.3em] text-brand-500 dark:text-brand-300 font-medium">
+          Executive overview
+        </div>
+        <h1 className="text-2xl font-semibold tracking-tight mt-1 heading-gradient">Founder Command Center</h1>
         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-          Executive overview of the entire enterprise {'\u00B7'} live from PostgreSQL
+          Live view across people, projects, finance, and security
         </p>
       </div>
 
-      {/* Stat cards — clickable */}
+      {/* KPI grid */}
       {loading || !overview ? (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           <SkeletonCard /><SkeletonCard /><SkeletonCard /><SkeletonCard />
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-          <StatCard
+          <FounderKpi
             label="Total Headcount"
-            value={overview.headcount}
-            hint="Active employees across all locations"
+            value={overview.headcount.toLocaleString('en-IN')}
+            hint="Active employees"
+            accent="brand"
             icon={<Users size={18} />}
             onClick={() => navigate('/employees')}
           />
-          <StatCard
+          <FounderKpi
             label="Active Projects"
-            value={overview.activeProjects + ' / ' + overview.totalProjects}
-            hint={'Avg health ' + overview.avgProjectHealth.toFixed(2) + ' ' + '\u00B7' + ' High risk: ' + overview.highRiskProjects}
-            icon={<FolderKanban size={18} />}
+            value={`${overview.activeProjects} / ${overview.totalProjects}`}
+            hint={`Avg health ${overview.avgProjectHealth.toFixed(2)} · ${overview.highRiskProjects} high-risk`}
             accent="violet"
+            icon={<FolderKanban size={18} />}
             onClick={() => navigate('/projects')}
           />
-          <StatCard
+          <FounderKpi
             label="Revenue YTD"
             value={formatINR(overview.revenueYtd)}
-            hint={overview.activeClients + ' active clients'}
-            icon={<TrendingUp size={18} />}
+            hint={`${overview.activeClients} active clients`}
             accent="emerald"
+            icon={<TrendingUp size={18} />}
             onClick={() => navigate('/finance')}
           />
-          <StatCard
+          <FounderKpi
             label="Open Security Events"
-            value={overview.openSecurityEvents}
-            hint={overview.overdueInvoices + ' overdue invoices ' + '\u00B7' + ' ' + overview.openInvoices + ' open'}
-            icon={<ShieldAlert size={18} />}
+            value={String(overview.openSecurityEvents)}
+            hint={`${overview.overdueInvoices} overdue · ${overview.openInvoices} open`}
             accent="rose"
+            icon={<ShieldAlert size={18} />}
             onClick={() => navigate('/security')}
           />
         </div>
       )}
 
-      {/* Charts row — clickable bars / pie */}
+      {/* Projects by status + Headcount by location */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <Card className="lg:col-span-2">
-          <CardHeader title="Projects by Status" subtitle="Click a bar to view matching projects" />
-          {loading ? <SkeletonTable rows={4} /> : (
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={statusChartData}>
-                  <XAxis dataKey="display" tick={{ fontSize: 11 }} interval={0} angle={-15} textAnchor="end" height={60} />
-                  <YAxis tick={{ fontSize: 11 }} />
-                  <Tooltip contentStyle={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: 8, fontSize: 12 }} />
-                  <Bar
-                    dataKey="count"
-                    fill="#3358ff"
-                    radius={[4, 4, 0, 0]}
-                    cursor="pointer"
-                    onClick={(data: any) => {
-                      const raw = data?.payload?.status || data?.status;
-                      if (raw) navigate('/projects?status=' + encodeURIComponent(raw));
-                    }}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
+          <CardHeader
+            title="Projects by Status"
+            subtitle="Click a status to open matching projects"
+            action={<Activity size={14} className="text-slate-400" />}
+          />
+          {loading ? <SkeletonCard /> : (
+            <div className="space-y-3">
+              {byStatus.map((s) => {
+                const pct = (s.count / totalProjectCount) * 100;
+                const tone = STATUS_TONE[s.status] || 'from-brand-400 to-brand-600';
+                return (
+                  <button
+                    key={s.status}
+                    onClick={() => navigate('/projects?status=' + encodeURIComponent(s.status))}
+                    className="w-full text-left group"
+                  >
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-xs font-medium text-slate-600 dark:text-slate-300 group-hover:text-brand-500 transition">
+                        {s.status.replace(/_/g, ' ')}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold tabular-nums">{s.count}</span>
+                        <span className="text-[10px] text-slate-400 tabular-nums w-10 text-right">{pct.toFixed(0)}%</span>
+                      </div>
+                    </div>
+                    <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full bg-gradient-to-r ${tone} transition-all duration-500`}
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                  </button>
+                );
+              })}
+              {byStatus.length === 0 && (
+                <div className="text-xs text-slate-500 py-6 text-center">No projects on record</div>
+              )}
             </div>
           )}
         </Card>
+
         <Card>
-          <CardHeader title="Headcount by Location" subtitle="Click a slice to view that location" />
-          {loading ? <SkeletonTable rows={3} /> : (
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={locChartData}
-                    dataKey="value"
-                    nameKey="name"
-                    outerRadius={70}
-                    label={({ name, value }) => name + ': ' + value}
-                    labelLine={false}
-                    cursor="pointer"
-                    onClick={(data: any) => {
-                      const code = data?.name || data?.payload?.name;
-                      if (code) navigate('/employees?location=' + encodeURIComponent(code));
-                    }}
+          <CardHeader
+            title="Headcount by Location"
+            subtitle="Click a location to open its employees"
+            action={<MapPin size={14} className="text-slate-400" />}
+          />
+          {loading ? <SkeletonCard /> : (
+            <div className="space-y-4">
+              {byLocation.map((l) => {
+                const pct = (l.count / totalHeadcount) * 100;
+                return (
+                  <button
+                    key={l.code}
+                    onClick={() => navigate('/employees?location=' + encodeURIComponent(l.code))}
+                    className="w-full text-left group"
                   >
-                    {locChartData.map((_, i) => (
-                      <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Legend wrapperStyle={{ fontSize: 12 }} />
-                </PieChart>
-              </ResponsiveContainer>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <div>
+                        <div className="text-sm font-semibold group-hover:text-brand-500 transition">{l.city || l.code}</div>
+                        <div className="text-[10px] uppercase tracking-wider text-slate-400">{l.code}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-lg font-semibold tabular-nums">{l.count}</div>
+                        <div className="text-[10px] text-slate-400 tabular-nums">{pct.toFixed(1)}%</div>
+                      </div>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-brand-400 to-violet-500 transition-all duration-500"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                  </button>
+                );
+              })}
+              {byLocation.length === 0 && (
+                <div className="text-xs text-slate-500 py-6 text-center">No locations on record</div>
+              )}
             </div>
           )}
         </Card>
       </div>
 
-      {/* Recent projects — clickable rows */}
+      {/* Recent projects */}
       <Card>
-        <CardHeader title="Recent Projects" subtitle="Click a row to open the project workspace" />
-        {loading ? <SkeletonTable rows={6} /> : (
-          <Table
-            columns={projectCols}
-            data={recent}
-            rowKey={(r) => r.projectCode}
-            emptyMessage="No projects yet"
-            onRowClick={(r) => navigate('/projects/' + encodeURIComponent(r.projectCode))}
-          />
+        <CardHeader
+          title="Recent Projects"
+          subtitle="Click any project to open its workspace"
+          action={
+            <button
+              onClick={() => navigate('/projects')}
+              className="text-[11px] text-brand-500 hover:underline inline-flex items-center gap-1"
+            >
+              View all <ArrowRight size={11} />
+            </button>
+          }
+        />
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            <SkeletonCard /><SkeletonCard /><SkeletonCard />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {recent.map((p) => (
+              <button
+                key={p.projectCode}
+                onClick={() => navigate('/projects/' + encodeURIComponent(p.projectCode))}
+                className="text-left rounded-lg border border-slate-200/60 dark:border-slate-800/60 bg-white/50 dark:bg-slate-900/40 p-4 card-hover"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="font-mono text-[10px] text-slate-400">{p.projectCode}</div>
+                    <div className="font-medium text-sm truncate mt-0.5">{p.name}</div>
+                    <div className="text-[11px] text-slate-500 truncate">
+                      {p.clientName} · {p.clientCountry}
+                    </div>
+                  </div>
+                  <StatusBadge status={p.status} />
+                </div>
+                <div className="mt-3">
+                  <div className="flex items-center justify-between text-[10px] text-slate-500 mb-1">
+                    <span>Progress</span>
+                    <span className="tabular-nums font-medium">{p.progress}%</span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-brand-400 to-emerald-500"
+                      style={{ width: `${p.progress}%` }}
+                    />
+                  </div>
+                </div>
+                <div className="mt-3 flex items-center justify-between text-[10px]">
+                  <span className="text-slate-500">
+                    Health <span className={(p.health >= 4.2 ? 'text-emerald-500' : p.health >= 3.5 ? 'text-amber-500' : 'text-rose-500') + ' font-medium'}>{p.health.toFixed(2)}</span>
+                  </span>
+                  <span className="text-slate-500">
+                    Risk <span className={(p.risk >= 2.5 ? 'text-rose-500' : p.risk >= 1.8 ? 'text-amber-500' : 'text-emerald-500') + ' font-medium'}>{p.risk.toFixed(2)}</span>
+                  </span>
+                  <span className="text-slate-500">
+                    {formatINR(p.revenue)}
+                  </span>
+                </div>
+              </button>
+            ))}
+            {recent.length === 0 && (
+              <div className="col-span-full text-xs text-slate-500 py-6 text-center">No recent projects</div>
+            )}
+          </div>
         )}
       </Card>
 
-      {/* Top clients — clickable rows */}
+      {/* Top clients */}
       <Card>
-        <CardHeader title="Top Clients by Revenue" subtitle="Click a row to open the client workspace" />
-        {loading ? <SkeletonTable rows={5} /> : (
-          <Table
-            columns={clientCols}
-            data={topClients}
-            rowKey={(r) => r.clientCode}
-            emptyMessage="No clients yet"
-            onRowClick={(r) => navigate('/clients/' + encodeURIComponent(r.clientCode))}
-          />
+        <CardHeader
+          title="Top Clients by Revenue"
+          subtitle="Click a client to open its workspace"
+          action={<DollarSign size={14} className="text-slate-400" />}
+        />
+        {loading ? <SkeletonCard /> : (
+          <div className="space-y-3">
+            {topClients.map((c, i) => {
+              const pct = (c.revenue / maxClientRevenue) * 100;
+              return (
+                <button
+                  key={c.clientCode}
+                  onClick={() => navigate('/clients/' + encodeURIComponent(c.clientCode))}
+                  className="w-full text-left group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="h-7 w-7 rounded-md grid place-items-center text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-500 shrink-0">
+                      {i + 1}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="font-medium text-sm truncate group-hover:text-brand-500 transition">{c.companyName}</div>
+                          <div className="text-[11px] text-slate-500 truncate">{c.country} · {c.industry} · {c.projectCount} projects</div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <div className="font-medium text-sm tabular-nums">{formatINR(c.revenue)}</div>
+                          <StatusBadge status={c.slaTier} />
+                        </div>
+                      </div>
+                      <div className="mt-2 h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-violet-400 to-brand-500 transition-all duration-500"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+            {topClients.length === 0 && (
+              <div className="text-xs text-slate-500 py-6 text-center">No clients on record</div>
+            )}
+          </div>
         )}
       </Card>
     </div>
+  );
+}
+
+function FounderKpi({
+  label, value, hint, icon, accent, onClick,
+}: {
+  label: string;
+  value: string;
+  hint: string;
+  icon: React.ReactNode;
+  accent: 'brand' | 'violet' | 'emerald' | 'rose' | 'amber' | 'teal';
+  onClick: () => void;
+}) {
+  const ACCENT: Record<string, string> = {
+    brand:   'from-brand-500/20 to-brand-500/0 text-brand-500',
+    violet:  'from-violet-500/20 to-violet-500/0 text-violet-500',
+    emerald: 'from-emerald-500/20 to-emerald-500/0 text-emerald-500',
+    rose:    'from-rose-500/20 to-rose-500/0 text-rose-500',
+    amber:   'from-amber-500/20 to-amber-500/0 text-amber-500',
+    teal:    'from-teal-500/20 to-teal-500/0 text-teal-500',
+  };
+  return (
+    <button
+      onClick={onClick}
+      className="text-left rounded-xl border border-slate-200/60 dark:border-slate-800/60 bg-white/60 dark:bg-slate-900/50 p-5 card-hover w-full"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-medium">
+            {label}
+          </div>
+          <div className="mt-2 text-2xl font-semibold tracking-tight truncate">{value}</div>
+          <div className="text-[11px] text-slate-400 mt-1 truncate">{hint}</div>
+        </div>
+        <div className={`h-10 w-10 rounded-lg grid place-items-center bg-gradient-to-br shrink-0 ${ACCENT[accent]}`}>
+          {icon}
+        </div>
+      </div>
+    </button>
   );
 }
