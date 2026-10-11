@@ -10,6 +10,18 @@ function formatINR(v: number): string {
   return '\u20B9' + v.toLocaleString('en-IN');
 }
 
+const STATUS_STYLE: Record<string, { border: string; tint: string; dot: string }> = {
+  ACTIVE:      { border: 'border-l-emerald-500', tint: 'bg-emerald-500/[0.04]', dot: 'bg-emerald-500' },
+  DELIVERED:   { border: 'border-l-emerald-500', tint: 'bg-emerald-500/[0.04]', dot: 'bg-emerald-500' },
+  PLANNING:    { border: 'border-l-sky-500',     tint: 'bg-sky-500/[0.04]',     dot: 'bg-sky-500'     },
+  QA:          { border: 'border-l-sky-500',     tint: 'bg-sky-500/[0.04]',     dot: 'bg-sky-500'     },
+  DEPLOYMENT:  { border: 'border-l-sky-500',     tint: 'bg-sky-500/[0.04]',     dot: 'bg-sky-500'     },
+  PENDING:     { border: 'border-l-amber-500',   tint: 'bg-amber-500/[0.04]',   dot: 'bg-amber-500'   },
+  ON_HOLD:     { border: 'border-l-amber-500',   tint: 'bg-amber-500/[0.04]',   dot: 'bg-amber-500'   },
+  CLOSED:      { border: 'border-l-slate-400',   tint: '',                      dot: 'bg-slate-400'   },
+  MAINTENANCE: { border: 'border-l-slate-400',   tint: '',                      dot: 'bg-slate-400'   },
+};
+
 const PROJECT_TYPE_TONE: Record<string, 'brand' | 'success' | 'warn' | 'danger' | 'info' | 'neutral'> = {
   FINANCE: 'success',
   HEALTHCARE: 'danger',
@@ -21,6 +33,7 @@ const PROJECT_TYPE_TONE: Record<string, 'brand' | 'success' | 'warn' | 'danger' 
 export default function ProjectCard({ project }: { project: ProjectListItem }) {
   const navigate = useNavigate();
   const p = project;
+  const style = STATUS_STYLE[p.status] || { border: 'border-l-slate-400', tint: '', dot: 'bg-slate-400' };
 
   const healthTone =
     p.healthScore == null ? 'text-slate-400'
@@ -32,7 +45,7 @@ export default function ProjectCard({ project }: { project: ProjectListItem }) {
     <Card
       padded={false}
       interactive
-      className="card-hover h-full flex flex-col cursor-pointer"
+      className={`card-hover h-full flex flex-col cursor-pointer border-l-4 ${style.border} ${style.tint}`}
     >
       <button
         type="button"
@@ -42,7 +55,7 @@ export default function ProjectCard({ project }: { project: ProjectListItem }) {
         {/* Header row: code + status */}
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <div className="font-mono text-[11px] text-slate-500 dark:text-slate-400">{p.projectCode}</div>
+            <div className="font-mono text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5"><span className={`inline-block w-1.5 h-1.5 rounded-full ${style.dot}`} />{p.projectCode}</div>
             <div className="font-medium text-sm truncate">{p.name}</div>
           </div>
           <StatusBadge status={p.status} />
