@@ -37,7 +37,8 @@ export default function CloudPage() {
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Cloud Infrastructure</h1>
+          <div className="text-[10px] uppercase tracking-[0.3em] text-brand-500 dark:text-brand-300 font-medium">Infrastructure</div>
+          <h1 className="text-2xl font-semibold tracking-tight mt-1 heading-gradient">Cloud Infrastructure</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
             Prototype view of AWS, Azure, and GCP footprint
           </p>

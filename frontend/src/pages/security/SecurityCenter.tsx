@@ -97,7 +97,8 @@ export default function SecurityCenter() {
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Security Center</h1>
+          <div className="text-[10px] uppercase tracking-[0.3em] text-brand-500 dark:text-brand-300 font-medium">Security operations</div>
+          <h1 className="text-2xl font-semibold tracking-tight mt-1 heading-gradient">Security Center</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
             {total.toLocaleString('en-IN')} events &middot; click a row for full details &middot; live from PostgreSQL
           </p>

@@ -165,7 +165,8 @@ export default function EngineeringPage() {
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Engineering</h1>
+          <div className="text-[10px] uppercase tracking-[0.3em] text-brand-500 dark:text-brand-300 font-medium">Delivery intelligence</div>
+          <h1 className="text-2xl font-semibold tracking-tight mt-1 heading-gradient">Engineering</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
             Repos, PRs, builds and deployments &middot; live from PostgreSQL
           </p>

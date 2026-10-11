@@ -147,7 +147,8 @@ export default function RecruitmentPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Recruitment</h1>
+        <div className="text-[10px] uppercase tracking-[0.3em] text-brand-500 dark:text-brand-300 font-medium">Talent acquisition</div>
+        <h1 className="text-2xl font-semibold tracking-tight mt-1 heading-gradient">Recruitment</h1>
         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
           Jobs, candidates, and pipeline &middot; live from PostgreSQL
         </p>
