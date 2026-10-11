@@ -1,12 +1,12 @@
-import HeroBackground from '../../components/layout/HeroBackground';
-﻿import { useEffect, useState } from 'react';
+﻿import HeroBackground from '../../components/layout/HeroBackground';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { AlertTriangle, TrendingUp, Users, FolderKanban, DollarSign, ShieldAlert, Calendar } from 'lucide-react';
+import { AlertTriangle, TrendingUp, Users, FolderKanban, DollarSign, ShieldAlert, Calendar, ArrowRight } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid } from 'recharts';
-import { Card, CardHeader, StatCard } from '../../components/ui/Card';
+import { Card, CardHeader } from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import StatusBadge from '../../components/ui/StatusBadge';
-import { SkeletonCard, SkeletonTable } from '../../components/ui/Skeleton';
+import { SkeletonCard } from '../../components/ui/Skeleton';
 import ErrorState from '../../components/ui/ErrorState';
 import { execService, ExecutiveSnapshot, OrgTree, RevenuePoint, RiskRadar } from '../../services/execService';
 
@@ -17,6 +17,40 @@ function formatINR(v: number): string {
 }
 function fmtDate(d: string): string {
   return new Date(d).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: '2-digit' });
+}
+
+function ExecKpi({
+  label, value, hint, icon, accent, onClick,
+}: {
+  label: string; value: string | number; hint: string; icon: React.ReactNode;
+  accent: 'brand' | 'violet' | 'emerald' | 'rose' | 'amber' | 'teal';
+  onClick: () => void;
+}) {
+  const ACCENT: Record<string, string> = {
+    brand:   'from-brand-500/20 to-brand-500/0 text-brand-500',
+    violet:  'from-violet-500/20 to-violet-500/0 text-violet-500',
+    emerald: 'from-emerald-500/20 to-emerald-500/0 text-emerald-500',
+    rose:    'from-rose-500/20 to-rose-500/0 text-rose-500',
+    amber:   'from-amber-500/20 to-amber-500/0 text-amber-500',
+    teal:    'from-teal-500/20 to-teal-500/0 text-teal-500',
+  };
+  return (
+    <button
+      onClick={onClick}
+      className="text-left rounded-xl border border-slate-200/60 dark:border-slate-800/60 bg-white/60 dark:bg-slate-900/50 p-5 card-hover w-full"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-medium">{label}</div>
+          <div className="mt-2 text-2xl font-semibold tracking-tight truncate">{value}</div>
+          <div className="text-[11px] text-slate-400 mt-1 truncate">{hint}</div>
+        </div>
+        <div className={`h-10 w-10 rounded-lg grid place-items-center bg-gradient-to-br shrink-0 ${ACCENT[accent]}`}>
+          {icon}
+        </div>
+      </div>
+    </button>
+  );
 }
 
 export default function ExecutiveDashboard() {
@@ -61,110 +95,70 @@ export default function ExecutiveDashboard() {
           </div>
         </div>
       </HeroBackground>
+
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Executive Dashboard</h1>
+        <div className="text-[10px] uppercase tracking-[0.3em] text-brand-500 dark:text-brand-300 font-medium">
+          Executive intelligence
+        </div>
+        <h1 className="text-2xl font-semibold tracking-tight mt-1 heading-gradient">Executive Dashboard</h1>
         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-          Cross-module executive view &middot; live from PostgreSQL
+          Cross-module executive view · live from PostgreSQL
         </p>
       </div>
 
-      {/* Top-line stat cards — clickable */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatCard
-          label="Headcount"
-          value={snapshot.headcount}
-          hint={snapshot.clients + ' active clients'}
-          icon={<Users size={18} />}
-          onClick={() => navigate('/employees')}
-        />
-        <StatCard
-          label="Active Projects"
-          value={snapshot.activeProjects + ' / ' + snapshot.totalProjects}
-          hint={'Health ' + snapshot.avgProjectHealth.toFixed(2) + ' \u00B7 risk ' + snapshot.avgProjectRisk.toFixed(2)}
-          icon={<FolderKanban size={18} />}
-          accent="violet"
-          onClick={() => navigate('/projects')}
-        />
-        <StatCard
-          label="Revenue Paid"
-          value={formatINR(snapshot.revenuePaid)}
-          hint={'Invoiced ' + formatINR(snapshot.revenueInvoiced)}
-          icon={<TrendingUp size={18} />}
-          accent="emerald"
-          onClick={() => navigate('/finance')}
-        />
-        <StatCard
-          label="Payroll YTD"
-          value={formatINR(snapshot.payrollNetYtd)}
-          hint={snapshot.attendanceThisMonth.toLocaleString('en-IN') + ' attendance records'}
-          icon={<Calendar size={18} />}
-          accent="teal"
-          onClick={() => navigate('/payroll')}
-        />
+        <ExecKpi label="Headcount" value={snapshot.headcount} hint={`${snapshot.clients} active clients`}
+          icon={<Users size={18} />} accent="brand" onClick={() => navigate('/employees')} />
+        <ExecKpi label="Active Projects" value={`${snapshot.activeProjects} / ${snapshot.totalProjects}`}
+          hint={`Health ${snapshot.avgProjectHealth.toFixed(2)} · risk ${snapshot.avgProjectRisk.toFixed(2)}`}
+          icon={<FolderKanban size={18} />} accent="violet" onClick={() => navigate('/projects')} />
+        <ExecKpi label="Revenue Paid" value={formatINR(snapshot.revenuePaid)}
+          hint={`Invoiced ${formatINR(snapshot.revenueInvoiced)}`}
+          icon={<TrendingUp size={18} />} accent="emerald" onClick={() => navigate('/finance')} />
+        <ExecKpi label="Payroll YTD" value={formatINR(snapshot.payrollNetYtd)}
+          hint={`${snapshot.attendanceThisMonth.toLocaleString('en-IN')} attendance records`}
+          icon={<Calendar size={18} />} accent="teal" onClick={() => navigate('/payroll')} />
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatCard
-          label="Open Invoices"
-          value={snapshot.openInvoices}
-          hint={snapshot.overdueInvoices + ' overdue \u00B7 ' + formatINR(snapshot.overdueAmount)}
-          icon={<DollarSign size={18} />}
-          accent="amber"
-          onClick={() => navigate('/finance?filter=open')}
-        />
-        <StatCard
-          label="Security Open"
-          value={snapshot.openSecurity}
-          hint={snapshot.criticalSecurity + ' critical'}
-          icon={<ShieldAlert size={18} />}
-          accent="rose"
-          onClick={() => navigate('/security')}
-        />
-        <StatCard
-          label="On Leave Today"
-          value={snapshot.onLeaveToday}
-          hint="Approved leaves"
-          icon={<Calendar size={18} />}
-          onClick={() => navigate('/leave?status=APPROVED')}
-        />
-        <StatCard
-          label="Avg Project Risk"
-          value={snapshot.avgProjectRisk.toFixed(2)}
-          hint="Portfolio-wide"
-          icon={<AlertTriangle size={18} />}
-          accent="amber"
-          onClick={() => navigate('/projects?sort=risk')}
-        />
+        <ExecKpi label="Open Invoices" value={snapshot.openInvoices}
+          hint={`${snapshot.overdueInvoices} overdue · ${formatINR(snapshot.overdueAmount)}`}
+          icon={<DollarSign size={18} />} accent="amber" onClick={() => navigate('/finance?status=SENT')} />
+        <ExecKpi label="Security Open" value={snapshot.openSecurity}
+          hint={`${snapshot.criticalSecurity} critical`}
+          icon={<ShieldAlert size={18} />} accent="rose" onClick={() => navigate('/security')} />
+        <ExecKpi label="On Leave Today" value={snapshot.onLeaveToday} hint="Approved leaves"
+          icon={<Calendar size={18} />} accent="violet" onClick={() => navigate('/leave?status=APPROVED')} />
+        <ExecKpi label="Avg Project Risk" value={snapshot.avgProjectRisk.toFixed(2)} hint="Portfolio-wide"
+          icon={<AlertTriangle size={18} />} accent="amber" onClick={() => navigate('/projects?sort=risk')} />
       </div>
 
-      {/* Revenue vs payroll trend — clickable bars */}
       <Card>
-        <CardHeader title="Revenue vs Payroll" subtitle="Click a bar to open matching transactions" />
+        <CardHeader
+          title="Revenue vs Payroll"
+          subtitle="Click a bar to open matching transactions"
+          action={<TrendingUp size={14} className="text-slate-400" />}
+        />
         <div className="h-72">
           <ResponsiveContainer>
             <BarChart data={revenue}>
               <CartesianGrid strokeDasharray="3 3" stroke="#33415533" />
               <XAxis dataKey="label" tick={{ fontSize: 10 }} />
               <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => formatINR(v)} />
-              <Tooltip formatter={(v: number) => formatINR(v)} contentStyle={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: 8, fontSize: 12 }} />
+              <Tooltip
+                formatter={(v: number) => formatINR(v)}
+                contentStyle={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: 8, fontSize: 12 }}
+              />
               <Legend wrapperStyle={{ fontSize: 12 }} />
               <Bar
-                dataKey="revenue"
-                name="Revenue"
-                fill="#10b981"
-                radius={[4, 4, 0, 0]}
-                cursor="pointer"
+                dataKey="revenue" name="Revenue" fill="#10b981" radius={[4, 4, 0, 0]} cursor="pointer"
                 onClick={(data: any) => {
                   const label = data?.payload?.label || data?.label;
                   if (label) navigate('/finance?period=' + encodeURIComponent(label));
                 }}
               />
               <Bar
-                dataKey="payroll"
-                name="Payroll"
-                fill="#3358ff"
-                radius={[4, 4, 0, 0]}
-                cursor="pointer"
+                dataKey="payroll" name="Payroll" fill="#3358ff" radius={[4, 4, 0, 0]} cursor="pointer"
                 onClick={(data: any) => {
                   const label = data?.payload?.label || data?.label;
                   if (label) navigate('/payroll?period=' + encodeURIComponent(label));
@@ -175,7 +169,6 @@ export default function ExecutiveDashboard() {
         </div>
       </Card>
 
-      {/* Org grid + recent audit */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <Card className="lg:col-span-2">
           <CardHeader title="Organisation Grid" subtitle="Click a cell or dept name to filter employees" />
@@ -194,11 +187,11 @@ export default function ExecutiveDashboard() {
                 {topDepts.map((d) => {
                   const total = orgTree.grid.filter((g) => g.departmentCode === d.code).reduce((s, x) => s + x.count, 0);
                   return (
-                    <tr key={d.code}>
+                    <tr key={d.code} className="hover:bg-slate-50 dark:hover:bg-slate-900/40 transition">
                       <td className="px-2 py-2 text-left font-medium">
                         <button
                           type="button"
-                          className="hover:text-brand-500 underline-offset-2 hover:underline"
+                          className="hover:text-brand-500 underline-offset-2 hover:underline transition"
                           onClick={() => navigate('/employees?department=' + encodeURIComponent(d.code))}
                         >
                           {d.name}
@@ -219,11 +212,10 @@ export default function ExecutiveDashboard() {
                                   '&location=' + encodeURIComponent(l.code)
                                 )
                               }
-                              className="inline-flex items-center justify-center rounded transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-brand-500/40 disabled:cursor-default disabled:hover:scale-100"
+                              className="inline-flex items-center justify-center rounded transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-brand-500/40 disabled:cursor-default disabled:hover:scale-100"
                               style={{
                                 backgroundColor: 'rgba(51,88,255,' + (intensity * 0.6 + 0.05) + ')',
-                                width: 32,
-                                height: 22,
+                                width: 32, height: 22,
                                 color: intensity > 0.5 ? 'white' : 'inherit',
                                 fontWeight: count > 0 ? 600 : 400,
                               }}
@@ -233,7 +225,7 @@ export default function ExecutiveDashboard() {
                           </td>
                         );
                       })}
-                      <td className="px-2 py-2 text-right font-medium">{total}</td>
+                      <td className="px-2 py-2 text-right font-medium tabular-nums">{total}</td>
                     </tr>
                   );
                 })}
@@ -249,80 +241,106 @@ export default function ExecutiveDashboard() {
               <Link
                 key={a.id}
                 to={'/audit?module=' + encodeURIComponent(a.module) + '&action=' + encodeURIComponent(a.action)}
-                className="flex items-center gap-2 text-xs hover:text-brand-500"
+                className="flex items-center gap-2 text-xs hover:text-brand-500 transition"
               >
                 <Badge tone="brand">{a.action}</Badge>
                 <span className="text-slate-500 truncate flex-1">{a.userEmail || 'system'}</span>
-                <span className="text-[10px] text-slate-400">{fmtDate(a.createdAt)}</span>
+                <span className="text-[10px] text-slate-400 tabular-nums">{fmtDate(a.createdAt)}</span>
               </Link>
             ))}
+            {snapshot.recentAudit.length === 0 && (
+              <div className="text-xs text-slate-500 py-4 text-center">No recent activity</div>
+            )}
           </div>
         </Card>
       </div>
 
-      {/* Risk radar */}
       <Card>
-        <CardHeader title="Risk Radar" subtitle="Cross-module items needing attention" />
+        <CardHeader
+          title="Risk Radar"
+          subtitle="Cross-module items needing attention"
+          action={<AlertTriangle size={14} className="text-amber-500" />}
+        />
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <div>
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-3">
               <AlertTriangle size={14} className="text-amber-500" />
               <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">High-Risk Projects</span>
               <Badge tone="warn">{radar.highRiskProjects.length}</Badge>
             </div>
-            {radar.highRiskProjects.length === 0 ? <div className="text-xs text-slate-500">None</div> : (
+            {radar.highRiskProjects.length === 0 ? (
+              <div className="text-xs text-slate-500 py-4 text-center rounded-md bg-slate-50 dark:bg-slate-900/40">
+                No high-risk projects
+              </div>
+            ) : (
               <div className="space-y-2">
                 {radar.highRiskProjects.map((p) => (
-                  <Link key={p.code} to={'/projects/' + encodeURIComponent(p.code)} className="block text-sm hover:text-brand-500">
+                  <Link
+                    key={p.code}
+                    to={'/projects/' + encodeURIComponent(p.code)}
+                    className="block text-sm rounded-md border border-slate-200/60 dark:border-slate-800/60 p-2 hover:border-brand-500/50 hover:bg-brand-500/5 transition"
+                  >
                     <div className="flex items-center justify-between">
                       <span className="font-mono text-xs">{p.code}</span>
                       <Badge tone="danger">Risk {p.risk}</Badge>
                     </div>
-                    <div className="text-xs text-slate-500 truncate">{p.name}</div>
+                    <div className="text-xs text-slate-500 truncate mt-1">{p.name}</div>
                   </Link>
                 ))}
               </div>
             )}
           </div>
           <div>
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-3">
               <DollarSign size={14} className="text-rose-500" />
               <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Overdue Invoices</span>
               <Badge tone="danger">{radar.overdueInvoices.length}</Badge>
             </div>
-            {radar.overdueInvoices.length === 0 ? <div className="text-xs text-slate-500">None</div> : (
+            {radar.overdueInvoices.length === 0 ? (
+              <div className="text-xs text-slate-500 py-4 text-center rounded-md bg-slate-50 dark:bg-slate-900/40">
+                No overdue invoices
+              </div>
+            ) : (
               <div className="space-y-2">
                 {radar.overdueInvoices.map((i) => (
                   <Link
                     key={i.number}
                     to={'/finance?invoice=' + encodeURIComponent(i.number)}
-                    className="block text-sm hover:text-brand-500"
+                    className="block text-sm rounded-md border border-slate-200/60 dark:border-slate-800/60 p-2 hover:border-rose-500/50 hover:bg-rose-500/5 transition"
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-mono text-xs">{i.number}</span>
-                      <span className="text-xs font-medium">{formatINR(i.total)}</span>
+                      <span className="text-xs font-medium tabular-nums">{formatINR(i.total)}</span>
                     </div>
-                    <div className="text-xs text-slate-500 truncate">{i.client}</div>
+                    <div className="text-xs text-slate-500 truncate mt-1">{i.client}</div>
                   </Link>
                 ))}
               </div>
             )}
           </div>
           <div>
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-3">
               <ShieldAlert size={14} className="text-rose-500" />
               <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Critical Security</span>
               <Badge tone="danger">{radar.criticalSecurity.length}</Badge>
             </div>
-            {radar.criticalSecurity.length === 0 ? <div className="text-xs text-slate-500">None</div> : (
+            {radar.criticalSecurity.length === 0 ? (
+              <div className="text-xs text-slate-500 py-4 text-center rounded-md bg-slate-50 dark:bg-slate-900/40">
+                No critical events
+              </div>
+            ) : (
               <div className="space-y-2">
                 {radar.criticalSecurity.map((s) => (
-                  <Link key={s.code} to={'/security?event=' + encodeURIComponent(s.code)} className="block text-sm hover:text-brand-500">
+                  <Link
+                    key={s.code}
+                    to={'/security?event=' + encodeURIComponent(s.code)}
+                    className="block text-sm rounded-md border border-slate-200/60 dark:border-slate-800/60 p-2 hover:border-rose-500/50 hover:bg-rose-500/5 transition"
+                  >
                     <div className="flex items-center justify-between">
                       <span className="font-mono text-xs">{s.code}</span>
-                      <span className="text-[10px] text-slate-500">{fmtDate(s.createdAt)}</span>
+                      <span className="text-[10px] text-slate-500 tabular-nums">{fmtDate(s.createdAt)}</span>
                     </div>
-                    <div className="text-xs text-slate-500 truncate">{s.title}</div>
+                    <div className="text-xs text-slate-500 truncate mt-1">{s.title}</div>
                   </Link>
                 ))}
               </div>
