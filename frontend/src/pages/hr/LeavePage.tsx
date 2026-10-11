@@ -1,4 +1,5 @@
 ﻿import { useEffect, useState } from 'react';
+import ExportButton from '../../components/ui/ExportButton';
 import { useSearchParams } from 'react-router-dom';
 import { Search, ChevronLeft, ChevronRight, X, CheckCircle2, XCircle, AlertCircle, Clock } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
@@ -205,7 +206,8 @@ export default function LeavePage() {
         )}
       </div>
 
-      {summary && (
+            <div className="flex justify-end mb-2"><ExportButton rows={data} filename={'export-' + new Date().toISOString().slice(0,10)} /></div>
+{summary && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <Kpi label="Total Requests" value={summary.total} hint={'Approved days ' + summary.totalDaysApproved}
             icon={<Clock size={18} />} accent="brand" onClick={clearFilters} />

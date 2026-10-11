@@ -1,4 +1,5 @@
 ﻿import { useEffect, useState } from 'react';
+import { usePolling, useRelativeTime } from '../../hooks/usePolling';
 import { TrendingUp, TrendingDown, Minus, Activity, Target } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer, Tooltip, YAxis } from 'recharts';
 import { Card, CardHeader } from '../../components/ui/Card';
@@ -49,7 +50,8 @@ export default function PulseIntelligence() {
       setError(e?.message || 'Failed to load Pulse Intelligence');
     } finally { setLoading(false); }
   };
-  useEffect(() => { load(); }, []);
+  const { lastUpdated } = usePolling(load, 30000);
+  const freshness = useRelativeTime(lastUpdated);
 
   if (loading) return <div className="space-y-4"><SkeletonCard /><SkeletonCard /><SkeletonCard /></div>;
   if (error) return <ErrorState message={error} onRetry={load} />;
@@ -66,6 +68,7 @@ export default function PulseIntelligence() {
         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
           {kpis.length} live KPIs across company, engineering, projects, finance, and HR
         </p>
+        <div className="text-[11px] text-slate-400 mt-1">Updated {freshness} · refresh every 30s</div>
       </div>
 
       {health && (

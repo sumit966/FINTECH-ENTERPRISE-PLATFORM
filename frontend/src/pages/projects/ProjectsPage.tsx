@@ -1,4 +1,5 @@
 ﻿import { useEffect, useState } from 'react';
+import ExportButton from '../../components/ui/ExportButton';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Card, CardHeader, StatCard } from '../../components/ui/Card';
@@ -126,7 +127,8 @@ export default function ProjectsPage() {
         </p>
       </div>
 
-      {summary && (
+            <div className="flex justify-end mb-2"><ExportButton rows={data} filename={'export-' + new Date().toISOString().slice(0,10)} /></div>
+{summary && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <StatCard
             label="Total Projects"

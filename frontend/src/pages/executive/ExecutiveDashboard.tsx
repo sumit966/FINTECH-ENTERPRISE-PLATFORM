@@ -1,8 +1,11 @@
 ﻿import HeroBackground from '../../components/layout/HeroBackground';
+import ExportPdfButton from '../../components/ui/ExportPdfButton';
+import { usePolling, useRelativeTime } from '../../hooks/usePolling';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AlertTriangle, TrendingUp, Users, FolderKanban, DollarSign, ShieldAlert, Calendar, ArrowRight } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid } from 'recharts';
+import { ComposedChart, Line } from 'recharts';
 import { Card, CardHeader } from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import StatusBadge from '../../components/ui/StatusBadge';
@@ -76,7 +79,8 @@ export default function ExecutiveDashboard() {
       setError(e?.message || 'Failed to load executive dashboard');
     } finally { setLoading(false); }
   };
-  useEffect(() => { load(); }, []);
+  const { lastUpdated } = usePolling(load, 30000);
+  const freshness = useRelativeTime(lastUpdated);
 
   if (loading) return <div className="space-y-4"><div className="grid grid-cols-4 gap-3"><SkeletonCard /><SkeletonCard /><SkeletonCard /><SkeletonCard /></div><SkeletonCard /><SkeletonCard /></div>;
   if (error) return <ErrorState message={error} onRetry={load} />;
@@ -86,7 +90,7 @@ export default function ExecutiveDashboard() {
   const topDepts = orgTree.departments.slice(0, 8);
 
   return (
-    <div className="space-y-6">
+    <div id="exec-dashboard" className="space-y-6">
       <HeroBackground height="220px" preset="glacier">
         <div className="absolute inset-0 flex items-end p-6">
           <div className="text-white">
@@ -100,10 +104,11 @@ export default function ExecutiveDashboard() {
         <div className="text-[10px] uppercase tracking-[0.3em] text-brand-500 dark:text-brand-300 font-medium">
           Executive intelligence
         </div>
-        <h1 className="text-2xl font-semibold tracking-tight mt-1 heading-gradient">Executive Dashboard</h1>
+        <div className="flex items-start justify-between gap-3 flex-wrap"><div><h1 className="text-2xl font-semibold tracking-tight mt-1 heading-gradient">Executive Dashboard</h1>
         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
           Cross-module executive view · live from PostgreSQL
-        </p>
+        </p></div><ExportPdfButton targetId="exec-dashboard" filename={'exec-dashboard-' + new Date().toISOString().slice(0,10)} /></div>
+        <div className="text-[11px] text-slate-400 mt-1">Updated {freshness} · refresh every 30s</div>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -141,7 +146,7 @@ export default function ExecutiveDashboard() {
         />
         <div className="h-72">
           <ResponsiveContainer>
-            <BarChart data={revenue}>
+            <ComposedChart data={revenue.map((r) => ({ ...r, net: r.revenue - r.payroll }))}>
               <CartesianGrid strokeDasharray="3 3" stroke="#33415533" />
               <XAxis dataKey="label" tick={{ fontSize: 10 }} />
               <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => formatINR(v)} />
@@ -164,7 +169,8 @@ export default function ExecutiveDashboard() {
                   if (label) navigate('/payroll?period=' + encodeURIComponent(label));
                 }}
               />
-            </BarChart>
+            <Line type="monotone" dataKey="net" name="Net" stroke="#8b5cf6" strokeWidth={2} dot={false} />
+            </ComposedChart>
           </ResponsiveContainer>
         </div>
       </Card>

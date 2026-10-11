@@ -1,4 +1,6 @@
 ﻿import { useEffect, useState } from 'react';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import ExportButton from '../../components/ui/ExportButton';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Card, CardHeader, StatCard } from '../../components/ui/Card';
@@ -112,7 +114,8 @@ export default function ClientsPage() {
         </p>
       </div>
 
-      {summary && (
+            <div className="flex justify-end mb-2"><ExportButton rows={data} filename={'export-' + new Date().toISOString().slice(0,10)} /></div>
+{summary && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <StatCard
             label="Total Clients"
@@ -138,7 +141,27 @@ export default function ClientsPage() {
         </div>
       )}
 
-      <Card padded={false} className="p-3">
+      
+      {summary && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <Card>
+            <CardHeader title="SLA Distribution" subtitle="Clients by service tier" />
+            <div className="h-56">
+              <ResponsiveContainer>
+                <PieChart>
+                  <Pie data={summary.bySlaTier.map((x) => ({ name: x.tier, value: x.count }))} dataKey="value" nameKey="name" outerRadius={70} innerRadius={40} label={(e: any) => e.name + ': ' + e.value} labelLine={false}>
+                    {summary.bySlaTier.map((_, i) => <Cell key={i} fill={['#3358ff','#8b5cf6','#14b8a6','#f59e0b','#ef4444'][i % 5]} />)}
+                  </Pie>
+                  <Tooltip contentStyle={{ background: '#0f172a', border: 'none', borderRadius: 8, fontSize: 12 }} />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </Card>
+        </div>
+      )}
+
+<Card padded={false} className="p-3">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
           <div className="relative md:col-span-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />

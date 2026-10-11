@@ -1,7 +1,8 @@
 ﻿import { useEffect, useState } from 'react';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { Search, ChevronLeft, ChevronRight, Briefcase, Users, ClipboardCheck, Layers } from 'lucide-react';
-import { Card } from '../../components/ui/Card';
+import { Card, CardHeader } from '../../components/ui/Card';
 import Kpi from '../../components/ui/Kpi';
 import Table, { Column } from '../../components/ui/Table';
 import Button from '../../components/ui/Button';
@@ -191,7 +192,27 @@ export default function RecruitmentPage() {
         </div>
       )}
 
-      <Tabs tabs={tabs} active={tab} onChange={(k) => setTab(k as Tab)} />
+      
+      {summary && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <Card>
+            <CardHeader title="Source of Hire" subtitle="Where candidates come from" />
+            <div className="h-56">
+              <ResponsiveContainer>
+                <PieChart>
+                  <Pie data={summary.bySource.map((x) => ({ name: x.source, value: x.count }))} dataKey="value" nameKey="name" outerRadius={70} innerRadius={40} label={(e: any) => e.name + ': ' + e.value} labelLine={false}>
+                    {summary.bySource.map((_, i) => <Cell key={i} fill={['#3358ff','#8b5cf6','#14b8a6','#f59e0b','#ef4444','#06b6d4'][i % 6]} />)}
+                  </Pie>
+                  <Tooltip contentStyle={{ background: '#0f172a', border: 'none', borderRadius: 8, fontSize: 12 }} />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </Card>
+        </div>
+      )}
+
+<Tabs tabs={tabs} active={tab} onChange={(k) => setTab(k as Tab)} />
 
       {tab === 'jobs' && (
         <>

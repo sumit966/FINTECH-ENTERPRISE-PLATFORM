@@ -1,4 +1,5 @@
 ﻿import { useEffect, useState } from 'react';
+import ExportButton from '../../components/ui/ExportButton';
 import { useSearchParams } from 'react-router-dom';
 import { Search, ChevronLeft, ChevronRight, Calendar, X } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid } from 'recharts';
@@ -140,7 +141,8 @@ export default function AttendancePage() {
         )}
       </div>
 
-      {summary && (
+            <div className="flex justify-end mb-2"><ExportButton rows={data} filename={'export-' + new Date().toISOString().slice(0,10)} /></div>
+{summary && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <Kpi
             label="Present (Latest)"

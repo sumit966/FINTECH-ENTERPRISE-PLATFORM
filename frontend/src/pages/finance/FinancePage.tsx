@@ -1,4 +1,5 @@
 ﻿import { useEffect, useState } from 'react';
+import ExportButton from '../../components/ui/ExportButton';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Search, ChevronLeft, ChevronRight, X, FileText, ExternalLink } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
@@ -192,7 +193,8 @@ export default function FinancePage() {
         </p>
       </div>
 
-      {summary && (
+            <div className="flex justify-end mb-2"><ExportButton rows={invoices} filename={'export-' + new Date().toISOString().slice(0,10)} /></div>
+{summary && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <StatCard
             label="Total Invoiced"

@@ -1,9 +1,11 @@
 ﻿import { useEffect, useMemo, useState } from 'react';
+import ExportButton from '../../components/ui/ExportButton';
 import { useSearchParams } from 'react-router-dom';
 import { Search, ChevronLeft, ChevronRight, X, Wallet, TrendingUp, AlertCircle, Calendar, ArrowDownAZ, ArrowUpAZ } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid,
 } from 'recharts';
+import { ComposedChart, Line } from 'recharts';
 import { Card, CardHeader } from '../../components/ui/Card';
 import Kpi from '../../components/ui/Kpi';
 import Table, { Column } from '../../components/ui/Table';
@@ -236,7 +238,8 @@ export default function PayrollPage() {
         </div>
       </Card>
 
-      {summary && (
+            <div className="flex justify-end mb-2"><ExportButton rows={sortedRows} filename={'export-' + new Date().toISOString().slice(0,10)} /></div>
+{summary && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <Kpi
             label="Net Paid (lifetime)"
@@ -281,7 +284,7 @@ export default function PayrollPage() {
           {trend.length === 0 ? <SkeletonTable rows={4} /> : (
             <div className="h-72">
               <ResponsiveContainer>
-                <BarChart data={trend}>
+                <ComposedChart data={trend}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#33415533" />
                   <XAxis dataKey="label" tick={{ fontSize: 10 }} />
                   <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => formatINR(v)} />
@@ -301,7 +304,8 @@ export default function PayrollPage() {
                       if (pt?.year && pt?.month) setUrl({ year: pt.year, month: pt.month, page: null });
                     }}
                   />
-                </BarChart>
+                <Line type="monotone" dataKey="net" name="Net" stroke="#8b5cf6" strokeWidth={2} dot={false} />
+                </ComposedChart>
               </ResponsiveContainer>
             </div>
           )}

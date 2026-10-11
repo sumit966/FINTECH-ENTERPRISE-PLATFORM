@@ -1,4 +1,6 @@
 ﻿import HeroBackground from '../../components/layout/HeroBackground';
+import ExportPdfButton from '../../components/ui/ExportPdfButton';
+import { usePolling, useRelativeTime } from '../../hooks/usePolling';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, FolderKanban, TrendingUp, ShieldAlert, ArrowRight, MapPin, Activity, DollarSign } from 'lucide-react';
@@ -60,7 +62,8 @@ export default function FounderCommandCenter() {
     } finally { setLoading(false); }
   };
 
-  useEffect(() => { load(); }, []);
+  const { lastUpdated } = usePolling(load, 30000);
+  const freshness = useRelativeTime(lastUpdated);
 
   if (error) return <ErrorState message={error} onRetry={load} />;
 
@@ -69,7 +72,7 @@ export default function FounderCommandCenter() {
   const maxClientRevenue = Math.max(1, ...topClients.map((c) => c.revenue));
 
   return (
-    <div className="space-y-6">
+    <div id="founder-dashboard" className="space-y-6">
       <HeroBackground height="220px" preset="crimson">
         <div className="absolute inset-0 flex items-end p-6">
           <div className="text-white">
@@ -83,10 +86,11 @@ export default function FounderCommandCenter() {
         <div className="text-[10px] uppercase tracking-[0.3em] text-brand-500 dark:text-brand-300 font-medium">
           Executive overview
         </div>
-        <h1 className="text-2xl font-semibold tracking-tight mt-1 heading-gradient">Founder Command Center</h1>
+        <div className="flex items-start justify-between gap-3 flex-wrap"><div><h1 className="text-2xl font-semibold tracking-tight mt-1 heading-gradient">Founder Command Center</h1>
         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
           Live view across people, projects, finance, and security
-        </p>
+        </p></div><ExportPdfButton targetId="founder-dashboard" filename={'founder-dashboard-' + new Date().toISOString().slice(0,10)} /></div>
+        <div className="text-[11px] text-slate-400 mt-1">Updated {freshness} · refresh every 30s</div>
       </div>
 
       {/* KPI grid */}

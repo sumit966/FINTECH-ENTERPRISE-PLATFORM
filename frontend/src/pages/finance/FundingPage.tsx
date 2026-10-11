@@ -1,4 +1,5 @@
 ﻿import { useEffect, useState } from 'react';
+import ExportButton from '../../components/ui/ExportButton';
 import { Link, useSearchParams } from 'react-router-dom';
 import { TrendingUp, AlertCircle, CheckCircle2, Clock, IndianRupee, X } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
@@ -69,7 +70,8 @@ export default function FundingPage() {
         </div>
       </Card>
 
-      {summary && (
+            <div className="flex justify-end mb-2"><ExportButton rows={records} filename={'export-' + new Date().toISOString().slice(0,10)} /></div>
+{summary && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <Kpi
             label="Total Recorded"
