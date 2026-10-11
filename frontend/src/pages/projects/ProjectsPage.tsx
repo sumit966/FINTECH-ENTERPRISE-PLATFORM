@@ -169,7 +169,7 @@ export default function ProjectsPage() {
         </div>
       )}
 
-      <Card>
+      <Card className="card-hover">
         <CardHeader title="Status Distribution" subtitle="Click to filter" />
         {summary ? (
           <div className="flex flex-wrap gap-2">
