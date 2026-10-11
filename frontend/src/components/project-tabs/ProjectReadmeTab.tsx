@@ -174,7 +174,7 @@ export default function ProjectReadmeTab({ project }: Props) {
 
   return (
     <div className="space-y-5">
-      <Card className="border-amber-500/30 bg-amber-500/5">
+      <Card className="border-amber-500/30 bg-amber-500/5 card-hover">
         <div className="flex items-start gap-2 text-xs text-amber-700 dark:text-amber-300">
           <AlertCircle size={14} className="mt-0.5 shrink-0" />
           <div>
@@ -184,7 +184,7 @@ export default function ProjectReadmeTab({ project }: Props) {
         </div>
       </Card>
 
-      <Card padded={false}>
+      <Card className="card-hover" padded={false}>
         <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-slate-200 dark:border-slate-800">
           <div className="flex items-center gap-2">
             <FileText size={16} className="text-brand-500" />

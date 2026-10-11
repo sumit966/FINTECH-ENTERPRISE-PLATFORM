@@ -135,7 +135,7 @@ export default function ProjectsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Projects</h1>
+        <h1 className="text-2xl font-semibold tracking-tight heading-gradient">Projects</h1>
         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
           {total} projects &middot; click a row to open the project workspace
         </p>
@@ -193,7 +193,7 @@ export default function ProjectsPage() {
         ) : <SkeletonTable rows={2} />}
       </Card>
 
-      <Card padded={false} className="p-3">
+      <Card padded={false} className="p-3 card-hover">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
           <input
@@ -210,7 +210,7 @@ export default function ProjectsPage() {
       ) : loading ? (
         <SkeletonTable rows={10} />
       ) : (
-        <Card padded={false}>
+        <Card padded={false} className="card-hover">
           <Table
             columns={columns}
             data={data}

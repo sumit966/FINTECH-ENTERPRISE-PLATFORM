@@ -57,7 +57,7 @@ export default function ProjectMonitoringTab({ project }: Props) {
   return (
     <div className="space-y-5">
       {/* Honest banner */}
-      <Card className="border-amber-500/30 bg-amber-500/5">
+      <Card className="border-amber-500/30 bg-amber-500/5 card-hover">
         <div className="flex items-start gap-2 text-xs text-amber-700 dark:text-amber-300">
           <AlertCircle size={14} className="mt-0.5 shrink-0" />
           <div>
@@ -80,7 +80,7 @@ export default function ProjectMonitoringTab({ project }: Props) {
             <div className="text-3xl font-semibold">{cpuUsage}%</div>
             <div className="text-xs text-slate-500 mt-1">{cpuCores} vCPU allocated</div>
           </Card>
-          <Card className="lg:col-span-2">
+          <Card className="lg:col-span-2 card-hover">
             <CardHeader title="CPU Over Time" subtitle="Last 30 minutes" />
             <div className="h-64">
               <ResponsiveContainer>
@@ -105,7 +105,7 @@ export default function ProjectMonitoringTab({ project }: Props) {
             <div className="text-3xl font-semibold">{memUsage}%</div>
             <div className="text-xs text-slate-500 mt-1">{memTotal} GB provisioned</div>
           </Card>
-          <Card className="lg:col-span-2">
+          <Card className="lg:col-span-2 card-hover">
             <CardHeader title="Memory Over Time" subtitle="Last 30 minutes" />
             <div className="h-64">
               <ResponsiveContainer>

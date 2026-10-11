@@ -130,7 +130,7 @@ export default function ProjectDevWorkspaceTab({ project }: Props) {
 
   return (
     <div className="space-y-5">
-      <Card className="border-amber-500/30 bg-amber-500/5">
+      <Card className="border-amber-500/30 bg-amber-500/5 card-hover">
         <div className="flex items-start gap-2 text-xs text-amber-700 dark:text-amber-300">
           <AlertCircle size={14} className="mt-0.5 shrink-0" />
           <div>
@@ -143,7 +143,7 @@ export default function ProjectDevWorkspaceTab({ project }: Props) {
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         {/* File tree */}
-        <Card className="lg:col-span-1" padded={false}>
+        <Card className="lg:col-span-1 card-hover" padded={false}>
           <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800">
             <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-slate-500">
               <Folder size={12} /> Project Files
@@ -156,7 +156,7 @@ export default function ProjectDevWorkspaceTab({ project }: Props) {
 
         {/* Code viewer */}
         <div className="lg:col-span-3 space-y-4">
-          <Card padded={false}>
+          <Card className="card-hover" padded={false}>
             <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-800">
               <div className="flex items-center gap-2 min-w-0">
                 <FileCode size={14} className="text-brand-500 shrink-0" />
