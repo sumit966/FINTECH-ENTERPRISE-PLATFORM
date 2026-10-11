@@ -1,4 +1,5 @@
 ﻿import { useEffect, useState } from 'react';
+import { usePolling, useRelativeTime } from '../../hooks/usePolling';
 import ExportButton from '../../components/ui/ExportButton';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -17,6 +18,16 @@ function formatINR(v: number): string {
   if (v >= 100000) return '\u20B9' + (v / 100000).toFixed(2) + ' L';
   return '\u20B9' + v.toLocaleString('en-IN');
 }
+
+const PROJECT_TYPE_TONE: Record<string, 'brand' | 'success' | 'warn' | 'danger' | 'info' | 'neutral'> = {
+  FINANCE: 'success',
+  HEALTHCARE: 'danger',
+  RETAIL: 'info',
+  INTERNAL: 'warn',
+  GENERAL: 'neutral',
+};
+const PROJECT_TYPES = ['FINANCE', 'HEALTHCARE', 'RETAIL', 'INTERNAL', 'GENERAL'];
+
 
 export default function ProjectsPage() {
   const navigate = useNavigate();
@@ -51,7 +62,9 @@ export default function ProjectsPage() {
   const [error, setError] = useState<string | null>(null);
   const [summary, setSummary] = useState<ProjectSummary | null>(null);
 
-  useEffect(() => { projectService.summary().then(setSummary).catch(() => {}); }, []);
+  const loadSummary = () => { projectService.summary().then(setSummary).catch(() => {}); };
+  const { lastUpdated } = usePolling(loadSummary, 30000);
+  const freshness = useRelativeTime(lastUpdated);
 
   // Sync debounced search into the URL (replace so we don't spam history)
   useEffect(() => {
@@ -100,6 +113,7 @@ export default function ProjectsPage() {
       </div>
     ) },
     { key: 'industry', header: 'Industry', render: (r) => <span className="text-xs">{r.industry}</span> },
+    { key: 'projectType', header: 'Type', render: (r) => <Badge tone={PROJECT_TYPE_TONE[r.projectType] || 'neutral'}>{r.projectType}</Badge> },
     { key: 'status', header: 'Status', render: (r) => <StatusBadge status={r.status} /> },
     { key: 'progress', header: 'Progress', render: (r) => (
       <div className="flex items-center gap-2 w-28">
@@ -125,6 +139,7 @@ export default function ProjectsPage() {
         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
           {total} projects &middot; click a row to open the project workspace
         </p>
+        <div className="text-[11px] text-slate-400 mt-1">Updated {freshness} · auto-refresh 30s</div>
       </div>
 
             <div className="flex justify-end mb-2"><ExportButton rows={data} filename={'export-' + new Date().toISOString().slice(0,10)} /></div>

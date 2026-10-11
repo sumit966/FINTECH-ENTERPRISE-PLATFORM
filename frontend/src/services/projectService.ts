@@ -3,6 +3,7 @@ import { api } from './api';
 export interface ProjectListItem {
   id: string;
   projectCode: string;
+  projectType: string;
   name: string;
   clientCode: string;
   clientName: string;
@@ -106,4 +107,12 @@ export const projectService = {
   list: (params: Record<string, any>) => api.get<ProjectListResponse>('/projects', params),
   detail: (code: string) => api.get<ProjectDetail>('/projects/' + code),
   summary: () => api.get<ProjectSummary>('/projects/summary'),
+  aiSummary: (code: string) => api.post<{
+    provider: string;
+    generatedAt: string;
+    summary: string[];
+    signals: Record<string, any>;
+    disclaimer: string;
+  }>('/projects/' + code + '/ai-summary', {}),
+  execute: (code: string, language: string) => api.post<any>('/projects/execute', { code, language }),
 };

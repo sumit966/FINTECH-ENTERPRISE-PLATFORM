@@ -509,6 +509,7 @@ enum ProjectStatus {
 model Project {
   id                String         @id @default(cuid())
   projectCode       String         @unique
+  projectType        String         @default("GENERAL")
   name              String
   clientId          String
   industry          String

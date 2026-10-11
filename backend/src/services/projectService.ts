@@ -62,6 +62,7 @@ export async function listProjects(params: ListProjectsParams) {
   const items = rows.map((p) => ({
     id: p.id,
     projectCode: p.projectCode,
+    projectType: p.projectType,
     name: p.name,
     clientCode: p.client.clientCode,
     clientName: p.client.companyName,

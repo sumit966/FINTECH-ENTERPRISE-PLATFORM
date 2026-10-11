@@ -12,4 +12,7 @@ router.get('/',                     requirePermission('projects.read'), project.
 router.get('/:code',                requirePermission('projects.read'), project.detail);
 router.get('/:code/financials',     requirePermission('finance.read'),  financial.getFinancials);
 
+router.post('/:code/ai-summary',   requirePermission('projects.read'), project.aiSummary);
+router.post('/execute',               requirePermission('projects.read'), project.execute);
+
 export default router;
