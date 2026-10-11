@@ -288,6 +288,7 @@ enum AttendanceSource {
   MANUAL
   BIOMETRIC
   INTEGRATION
+  SEED
 }
 
 model Attendance {
