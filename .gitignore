@@ -31,3 +31,17 @@ coverage/
 
 # Root lockfile (deps live in backend/ and frontend/)
 /package-lock.json
+# DB backups and temp scripts (never commit)
+*.dump
+_*.cjs
+_*.js
+!_patch*.js
+!vite.config.js
+page-fixes/
+remaining/
+
+# Build artifacts
+*.tsbuildinfo
+frontend/dist/
+frontend/vite.config.js
+frontend/vite.config.d.ts
