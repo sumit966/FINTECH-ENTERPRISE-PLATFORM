@@ -1,4 +1,5 @@
 ﻿import { useEffect, useState } from 'react';
+import ProjectCompilerTab from '../../components/project-tabs/ProjectCompilerTab';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, ExternalLink, GitBranch, Rocket, Users, Calendar, DollarSign, AlertTriangle, Target, CheckCircle2, FileText, Workflow, Terminal, Activity } from 'lucide-react';
 import { Sparkles, Info, Layers, Database } from 'lucide-react';
@@ -25,9 +26,9 @@ function formatDate(d: string | null): string {
   return new Date(d).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
-type TabKey = 'overview' | 'financials' | 'members' | 'tasks' | 'milestones' | 'risks' | 'invoices' | 'deployments' | 'readme' | 'flowcharts' | 'workspace' | 'monitoring';
+type TabKey = 'overview' | 'financials' | 'members' | 'tasks' | 'milestones' | 'risks' | 'invoices' | 'deployments' | 'readme' | 'flowcharts' | 'workspace' | 'monitoring' | 'compiler';
 
-const VALID_TABS: TabKey[] = ['overview', 'financials', 'members', 'tasks', 'milestones', 'risks', 'invoices', 'deployments', 'readme', 'flowcharts', 'workspace', 'monitoring'];
+const VALID_TABS: TabKey[] = ['overview', 'financials', 'members', 'tasks', 'milestones', 'risks', 'invoices', 'deployments', 'readme', 'flowcharts', 'workspace', 'monitoring', 'compiler'];
 
 export default function ProjectDetailPage() {
   const { code } = useParams<{ code: string }>();
@@ -478,6 +479,7 @@ export default function ProjectDetailPage() {
       {activeTab === 'flowcharts' && <ProjectFlowchartTab project={p} />}
       {activeTab === 'workspace' && <ProjectDevWorkspaceTab project={p} />}
       {activeTab === 'monitoring' && <ProjectMonitoringTab project={p} />}
+      {activeTab === 'compiler' && <ProjectCompilerTab projectCode={p.projectCode} />}
 
       {/* Reference implementation (always shown on overview) */}
       {activeTab === 'overview' && p.reference && (
