@@ -34,7 +34,8 @@ const TONE_FOR: Record<string, any> = {
   SILVER: 'neutral',
 };
 
-export default function StatusBadge({ status }: { status: string }) {
-  const tone = TONE_FOR[status] || 'neutral';
-  return <Badge tone={tone}>{status.replace(/_/g, ' ')}</Badge>;
+export default function StatusBadge({ status }: { status?: string | null }) {
+  const safe = (status ?? 'UNKNOWN').toString();
+  const tone = TONE_FOR[safe] || 'neutral';
+  return <Badge tone={tone}>{safe.replace(/_/g, ' ')}</Badge>;
 }
