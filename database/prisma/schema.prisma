@@ -252,6 +252,7 @@ model Employee {
   interviews       Interview[]       @relation("InterviewerRef")
   candidates       Candidate[]       @relation("CandidateRef")
   notifications    Notification[]
+  onboarding       OnboardingRecord?
   paymentsApproved Payroll[]        @relation("PayrollApprover")
   managedProjects  Project[]        @relation("ProjectManager")
   managedClients   Client[]         @relation("ClientAccountManager")
@@ -283,6 +284,12 @@ enum AttendanceStatus {
   OVERTIME
 }
 
+enum AttendanceSource {
+  MANUAL
+  BIOMETRIC
+  INTEGRATION
+}
+
 model Attendance {
   id               String           @id @default(cuid())
   employeeId       String
@@ -293,6 +300,7 @@ model Attendance {
   overtimeHours    Decimal?         @db.Decimal(5, 2)
   status           AttendanceStatus
   workMode         String
+  source           AttendanceSource @default(MANUAL)
   notes            String?
 
   employee         Employee         @relation(fields: [employeeId], references: [id], onDelete: Cascade)
@@ -1351,4 +1359,192 @@ model KpiSnapshot {
 
   @@index([kpiId])
   @@index([capturedAt])
+}
+
+// ============================================================================
+// 18. ONBOARDING
+// ============================================================================
+
+enum OnboardingStage {
+  OFFER_ACCEPTED
+  PERSONAL_DETAILS
+  DOCUMENTS
+  DEPT_ASSIGNMENT
+  MANAGER_ASSIGNMENT
+  ACCOUNT_SETUP
+  ASSET_ASSIGNMENT
+  POLICY_ACK
+  ORIENTATION
+  COMPLETE
+}
+
+enum OnboardingStatus {
+  IN_PROGRESS
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+}
+
+model OnboardingRecord {
+  id            String           @id @default(cuid())
+  employeeId    String           @unique
+  currentStage  OnboardingStage  @default(OFFER_ACCEPTED)
+  status        OnboardingStatus @default(IN_PROGRESS)
+  startedAt     DateTime         @default(now())
+  completedAt   DateTime?
+  notes         String?
+
+  employee      Employee         @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  tasks         OnboardingTask[]
+
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@index([status])
+}
+
+model OnboardingTask {
+  id           String           @id @default(cuid())
+  recordId     String
+  stage        OnboardingStage
+  title        String
+  description  String?
+  assignedTo   String?
+  isComplete   Boolean          @default(false)
+  completedAt  DateTime?
+  completedBy  String?
+
+  record       OnboardingRecord @relation(fields: [recordId], references: [id], onDelete: Cascade)
+
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  @@index([recordId])
+  @@index([stage])
+  @@index([isComplete])
+}
+// ============================================================================
+// 19. FUNDING INTELLIGENCE
+// ============================================================================
+
+enum FundingType {
+  EQUITY
+  GRANT
+  DEBT
+  REVENUE_SHARE
+  OTHER
+}
+
+enum FundingStatus {
+  RECORDED
+  VERIFIED
+  APPROVED
+  DISBURSED
+  RECEIVED
+  REJECTED
+}
+
+model FundingRecord {
+  id                    String         @id @default(cuid())
+  fundingCode           String         @unique
+  source                String
+  sourceType            String
+  country               String
+  amount                Decimal        @db.Decimal(18, 2)
+  currency              String         @default("INR")
+  fundingType           FundingType
+  status                FundingStatus  @default(RECORDED)
+  recordedAt            DateTime       @default(now())
+  verifiedAt            DateTime?
+  approvedAt            DateTime?
+  notes                 String?
+  supportingDocumentUrl String?
+
+  disbursements FundingDisbursement[]
+  documents     FundingDocument[]
+
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([status])
+}
+
+model FundingDisbursement {
+  id           String        @id @default(cuid())
+  fundingId    String
+  amount       Decimal       @db.Decimal(18, 2)
+  expectedDate DateTime
+  receivedAt   DateTime?
+  status       String        @default("PENDING")
+  reference    String?
+  notes        String?
+
+  funding      FundingRecord @relation(fields: [fundingId], references: [id], onDelete: Cascade)
+
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@index([fundingId])
+}
+
+model FundingDocument {
+  id         String        @id @default(cuid())
+  fundingId  String
+  title      String
+  category   String
+  url        String
+  verifiedBy String?
+  verifiedAt DateTime?
+
+  funding    FundingRecord @relation(fields: [fundingId], references: [id], onDelete: Cascade)
+
+  createdAt  DateTime      @default(now())
+
+  @@index([fundingId])
+}
+
+
+// ============================================================================
+// 20. AUTOMATION RUN LOG + BIOMETRIC DEVICE
+// ============================================================================
+
+model AutomationRunLog {
+  id          String   @id @default(cuid())
+  runId       String?
+  ruleCode    String
+  trigger     String
+  workflow    String?
+  status      String   @default("PENDING")
+  triggeredBy String?
+  startedAt   DateTime @default(now())
+  completedAt DateTime?
+  finishedAt  DateTime?
+  message     String?
+  payload     Json?
+  createdAt   DateTime @default(now())
+
+  @@index([workflow])
+  @@index([status])
+  @@index([ruleCode])
+}
+
+model BiometricDevice {
+  id              String   @id @default(cuid())
+  deviceCode      String   @unique
+  name            String
+  vendor          String?
+  model           String?
+  locationCode    String?
+  ipAddress       String?
+  integrationType String   @default("MANUAL")
+  status          String   @default("INTEGRATION_REQUIRED")
+  lastSeenAt      DateTime?
+  lastSyncAt      DateTime?
+  firmwareVersion String?
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([status])
+  @@index([locationCode])
 }

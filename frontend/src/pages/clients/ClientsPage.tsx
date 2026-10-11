@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+﻿import { useEffect, useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Card, CardHeader, StatCard } from '../../components/ui/Card';
 import Table, { Column } from '../../components/ui/Table';
@@ -18,11 +18,19 @@ function formatINR(v: number): string {
 }
 
 export default function ClientsPage() {
-  const [search, setSearch] = useState('');
+  const navigate = useNavigate();
+  const [params, setParams] = useSearchParams();
+
+  const countryFromUrl = params.get('country') || '';
+  const industryFromUrl = params.get('industry') || '';
+  const statusFromUrl = params.get('status') || '';
+  const searchFromUrl = params.get('q') || '';
+
+  const [search, setSearch] = useState(searchFromUrl);
   const debounced = useDebounce(search, 350);
-  const [country, setCountry] = useState('');
-  const [industry, setIndustry] = useState('');
-  const [status, setStatus] = useState('');
+  const country = countryFromUrl;
+  const industry = industryFromUrl;
+  const status = statusFromUrl;
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
 
@@ -34,6 +42,14 @@ export default function ClientsPage() {
   const [summary, setSummary] = useState<ClientSummary | null>(null);
 
   useEffect(() => { clientService.summary().then(setSummary).catch(() => {}); }, []);
+
+  // Sync debounced search to URL
+  useEffect(() => {
+    const np = new URLSearchParams(params);
+    if (debounced && debounced !== (np.get('q') || '')) { np.set('q', debounced); setParams(np, { replace: true }); }
+    else if (!debounced && np.has('q')) { np.delete('q'); setParams(np, { replace: true }); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debounced]);
 
   useEffect(() => {
     let cancelled = false;
@@ -54,11 +70,17 @@ export default function ClientsPage() {
 
   useEffect(() => { setPage(1); }, [debounced, country, industry, status, pageSize]);
 
+  const setFilter = (key: string, value: string) => {
+    const np = new URLSearchParams(params);
+    if (value) np.set(key, value); else np.delete(key);
+    setParams(np, { replace: true });
+  };
+
   const columns: Column<ClientListItem>[] = [
     { key: 'code', header: 'Code', render: (r) => <span className="font-mono text-xs">{r.clientCode}</span> },
     { key: 'name', header: 'Client', render: (r) => (
       <div>
-        <Link to={'/clients/' + r.clientCode} className="font-medium text-sm hover:text-brand-500">{r.companyName}</Link>
+        <span className="font-medium text-sm">{r.companyName}</span>
         <div className="text-[11px] text-slate-500">{r.country} &middot; {r.industry}</div>
       </div>
     ) },
@@ -74,19 +96,45 @@ export default function ClientsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
+      
+      <Card className="border-slate-400/30 bg-slate-500/5">
+        <div className="text-xs text-slate-600 dark:text-slate-300">
+          <strong>Synthetic demonstration data.</strong> These figures reflect a synthetic 500-employee dataset spanning
+          Oct 2024 to the latest recorded period. They do not represent the intended financial scale of a real
+          operating business and are not suitable for planning, investment, or compliance purposes. See the master data
+          note in the platform documentation for details.
+        </div>
+      </Card>
+<div>
         <h1 className="text-2xl font-semibold tracking-tight">Clients</h1>
         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-          45 clients across 8 countries &middot; live from PostgreSQL
+          {total} clients &middot; click a row to open the client workspace
         </p>
       </div>
 
       {summary && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <StatCard label="Total Clients" value={summary.total} hint={summary.byStatus.find((s) => s.status === 'ACTIVE')?.count + ' active'} />
-          <StatCard label="Total Revenue" value={formatINR(summary.totalRevenue)} hint="Lifetime revenue" />
-          <StatCard label="Contract Value" value={formatINR(summary.totalContractValue)} hint="Active MSAs" />
-          <StatCard label="Countries" value={summary.byCountry.length} hint={summary.byIndustry.length + ' industries'} />
+          <StatCard
+            label="Total Clients"
+            value={summary.total}
+            hint={summary.byStatus.find((s) => s.status === 'ACTIVE')?.count + ' active'}
+            onClick={() => { const np = new URLSearchParams(); setParams(np); }}
+          />
+          <StatCard
+            label="Total Revenue"
+            value={formatINR(summary.totalRevenue)}
+            hint="Lifetime revenue"
+          />
+          <StatCard
+            label="Contract Value"
+            value={formatINR(summary.totalContractValue)}
+            hint="Active MSAs"
+          />
+          <StatCard
+            label="Countries"
+            value={summary.byCountry.length}
+            hint={summary.byIndustry.length + ' industries'}
+          />
         </div>
       )}
 
@@ -96,15 +144,15 @@ export default function ClientsPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
             <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search client" className="w-full pl-9 pr-3 py-2 text-sm rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900" />
           </div>
-          <select value={country} onChange={(e) => setCountry(e.target.value)} className="rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-2 text-sm">
+          <select value={country} onChange={(e) => setFilter('country', e.target.value)} className="rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-2 text-sm">
             <option value="">All countries</option>
             {summary?.byCountry.map((c) => <option key={c.country} value={c.country}>{c.country} ({c.count})</option>)}
           </select>
-          <select value={industry} onChange={(e) => setIndustry(e.target.value)} className="rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-2 text-sm">
+          <select value={industry} onChange={(e) => setFilter('industry', e.target.value)} className="rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-2 text-sm">
             <option value="">All industries</option>
             {summary?.byIndustry.map((i) => <option key={i.industry} value={i.industry}>{i.industry} ({i.count})</option>)}
           </select>
-          <select value={status} onChange={(e) => setStatus(e.target.value)} className="rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-2 text-sm">
+          <select value={status} onChange={(e) => setFilter('status', e.target.value)} className="rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-2 text-sm">
             <option value="">All statuses</option>
             <option value="ACTIVE">Active</option>
             <option value="PROSPECT">Prospect</option>
@@ -117,7 +165,13 @@ export default function ClientsPage() {
       {error ? <ErrorState message={error} onRetry={() => setPage((p) => p)} /> :
        loading ? <SkeletonTable rows={10} /> :
        <Card padded={false}>
-        <Table columns={columns} data={data} rowKey={(r) => r.id} emptyMessage="No clients match your filters" />
+        <Table
+          columns={columns}
+          data={data}
+          rowKey={(r) => r.id}
+          emptyMessage="No clients match your filters"
+          onRowClick={(r) => navigate('/clients/' + encodeURIComponent(r.clientCode))}
+        />
       </Card>}
 
       {!loading && !error && total > 0 && (

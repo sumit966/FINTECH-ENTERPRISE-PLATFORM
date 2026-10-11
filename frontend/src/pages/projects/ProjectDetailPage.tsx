@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, ExternalLink, GitBranch, Rocket, Users, Calendar, DollarSign, AlertTriangle, Target, CheckCircle2 } from 'lucide-react';
+﻿import { useEffect, useState } from 'react';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { ArrowLeft, ExternalLink, GitBranch, Rocket, Users, Calendar, DollarSign, AlertTriangle, Target, CheckCircle2, FileText, Workflow, Terminal, Activity } from 'lucide-react';
 import { Card, CardHeader, StatCard } from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import StatusBadge from '../../components/ui/StatusBadge';
@@ -8,6 +8,11 @@ import Table, { Column } from '../../components/ui/Table';
 import { SkeletonCard, SkeletonTable } from '../../components/ui/Skeleton';
 import ErrorState from '../../components/ui/ErrorState';
 import { projectService, ProjectDetail } from '../../services/projectService';
+import ProjectFinancials from './ProjectFinancials';
+import ProjectReadmeTab from '../../components/project-tabs/ProjectReadmeTab';
+import ProjectFlowchartTab from '../../components/project-tabs/ProjectFlowchartTab';
+import ProjectDevWorkspaceTab from '../../components/project-tabs/ProjectDevWorkspaceTab';
+import ProjectMonitoringTab from '../../components/project-tabs/ProjectMonitoringTab';
 
 function formatINR(v: number): string {
   if (v >= 10000000) return '\u20B9' + (v / 10000000).toFixed(2) + ' Cr';
@@ -19,12 +24,25 @@ function formatDate(d: string | null): string {
   return new Date(d).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
+type TabKey = 'overview' | 'financials' | 'members' | 'tasks' | 'milestones' | 'risks' | 'invoices' | 'deployments' | 'readme' | 'flowcharts' | 'workspace' | 'monitoring';
+
+const VALID_TABS: TabKey[] = ['overview', 'financials', 'members', 'tasks', 'milestones', 'risks', 'invoices', 'deployments', 'readme', 'flowcharts', 'workspace', 'monitoring'];
+
 export default function ProjectDetailPage() {
   const { code } = useParams<{ code: string }>();
+  const [params, setParams] = useSearchParams();
   const [p, setP] = useState<ProjectDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'members' | 'tasks' | 'milestones' | 'risks' | 'invoices' | 'deployments'>('overview');
+
+  const tabFromUrl = (params.get('tab') || 'overview') as TabKey;
+  const activeTab: TabKey = VALID_TABS.includes(tabFromUrl) ? tabFromUrl : 'overview';
+
+  const setActiveTab = (next: TabKey) => {
+    const np = new URLSearchParams(params);
+    if (next === 'overview') np.delete('tab'); else np.set('tab', next);
+    setParams(np, { replace: true });
+  };
 
   const load = async () => {
     if (!code) return;
@@ -58,7 +76,7 @@ export default function ProjectDetailPage() {
   ];
 
   const invoiceCols: Column<ProjectDetail['invoices'][0]>[] = [
-    { key: 'num', header: 'Invoice', render: (r) => <span className="font-mono text-xs">{r.invoiceNumber}</span> },
+    { key: 'num', header: 'Invoice', render: (r) => <Link to={'/finance?invoice=' + encodeURIComponent(r.invoiceNumber)} className="font-mono text-xs hover:text-brand-500">{r.invoiceNumber}</Link> },
     { key: 'issue', header: 'Issued', render: (r) => <span className="text-xs">{formatDate(r.issueDate)}</span> },
     { key: 'due', header: 'Due', render: (r) => <span className="text-xs">{formatDate(r.dueDate)}</span> },
     { key: 'total', header: 'Total', className: 'text-right', render: (r) => <span className="text-xs">{formatINR(r.total)}</span> },
@@ -71,14 +89,19 @@ export default function ProjectDetailPage() {
   const totalPaid = p.invoices.reduce((s, i) => s + i.paidAmount, 0);
   const totalInvoiced = p.invoices.reduce((s, i) => s + i.total, 0);
 
-  const tabs: { key: typeof activeTab; label: string; count: number }[] = [
-    { key: 'overview',     label: 'Overview',     count: 0 },
-    { key: 'members',      label: 'Members',      count: p.members.length },
-    { key: 'tasks',        label: 'Tasks',        count: p.tasks.length },
-    { key: 'milestones',   label: 'Milestones',   count: p.milestones.length },
-    { key: 'risks',        label: 'Risks',        count: p.risks.length },
-    { key: 'invoices',     label: 'Invoices',     count: p.invoices.length },
-    { key: 'deployments',  label: 'Deployments',  count: p.deployments.length },
+  const tabs: { key: TabKey; label: string; count: number; icon: any }[] = [
+    { key: 'overview',    label: 'Overview',    count: 0,                    icon: Users },
+    { key: 'financials',  label: 'Financials',  count: 0,                    icon: DollarSign },
+    { key: 'members',     label: 'Team',        count: p.members.length,     icon: Users },
+    { key: 'tasks',       label: 'Tasks',       count: p.tasks.length,       icon: CheckCircle2 },
+    { key: 'milestones',  label: 'Milestones',  count: p.milestones.length,  icon: Target },
+    { key: 'risks',       label: 'Risks',       count: p.risks.length,       icon: AlertTriangle },
+    { key: 'invoices',    label: 'Invoices',    count: p.invoices.length,    icon: DollarSign },
+    { key: 'deployments', label: 'Deployments', count: p.deployments.length, icon: Rocket },
+    { key: 'readme',      label: 'README',      count: 0,                    icon: FileText },
+    { key: 'flowcharts',  label: 'Flowcharts',  count: 0,                    icon: Workflow },
+    { key: 'workspace',   label: 'Workspace',   count: 0,                    icon: Terminal },
+    { key: 'monitoring',  label: 'Monitoring',  count: 0,                    icon: Activity },
   ];
 
   return (
@@ -118,26 +141,30 @@ export default function ProjectDetailPage() {
         </div>
       </Card>
 
-      {/* Top stats */}
+      {/* Top stats — clickable */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatCard label="Budget" value={formatINR(p.budget)} hint={formatINR(p.cost) + ' spent'} />
-        <StatCard label="Revenue" value={formatINR(p.revenue)} hint={formatINR(p.profit) + ' profit'} />
-        <StatCard label="Timeline" value={formatDate(p.startDate) + ' \u2192 ' + formatDate(p.expectedEndDate)} hint={p.actualEndDate ? 'Delivered ' + formatDate(p.actualEndDate) : 'In progress'} />
-        <StatCard label="Team" value={p.members.length} hint={p.projectManager ? 'PM: ' + p.projectManager.fullName : 'No PM assigned'} />
+        <StatCard label="Budget" value={formatINR(p.budget)} hint={formatINR(p.cost) + ' spent'} onClick={() => setActiveTab('financials')} />
+        <StatCard label="Revenue" value={formatINR(p.revenue)} hint={formatINR(p.profit) + ' profit'} onClick={() => setActiveTab('financials')} />
+        <StatCard label="Timeline" value={formatDate(p.startDate) + ' \u2192 ' + formatDate(p.expectedEndDate)} hint={p.actualEndDate ? 'Delivered ' + formatDate(p.actualEndDate) : 'In progress'} onClick={() => setActiveTab('milestones')} />
+        <StatCard label="Team" value={p.members.length} hint={p.projectManager ? 'PM: ' + p.projectManager.fullName : 'No PM assigned'} onClick={() => setActiveTab('members')} />
       </div>
 
-      {/* Tab navigation */}
+      {/* Tab navigation — all 12 tabs, URL-backed */}
       <div className="flex items-center gap-1 border-b border-slate-200 dark:border-slate-800 overflow-x-auto">
-        {tabs.map((t) => (
-          <button
-            key={t.key}
-            onClick={() => setActiveTab(t.key)}
-            className={'px-4 py-2 text-sm font-medium border-b-2 whitespace-nowrap ' + (activeTab === t.key ? 'border-brand-500 text-brand-500' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-200')}
-          >
-            {t.label}
-            {t.count > 0 && <span className="ml-2 text-xs rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5">{t.count}</span>}
-          </button>
-        ))}
+        {tabs.map((t) => {
+          const Icon = t.icon;
+          return (
+            <button
+              key={t.key}
+              onClick={() => setActiveTab(t.key)}
+              className={'inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium border-b-2 whitespace-nowrap ' + (activeTab === t.key ? 'border-brand-500 text-brand-500' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-200')}
+            >
+              <Icon size={13} />
+              {t.label}
+              {t.count > 0 && <span className="ml-1 text-xs rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5">{t.count}</span>}
+            </button>
+          );
+        })}
       </div>
 
       {/* Tab content */}
@@ -174,37 +201,37 @@ export default function ProjectDetailPage() {
                     <div className="h-full bg-brand-500" style={{ width: p.progressPercent + '%' }} />
                   </div>
                 </div>
-                <div className="flex items-center gap-2 text-xs">
+                <button onClick={() => setActiveTab('milestones')} className="w-full flex items-center gap-2 text-xs hover:text-brand-500">
                   <Target size={14} className="text-slate-400" />
                   <span className="text-slate-500">Milestones</span>
                   <span className="font-medium ml-auto">{milestonesDone} / {p.milestones.length}</span>
-                </div>
-                <div className="flex items-center gap-2 text-xs">
+                </button>
+                <button onClick={() => setActiveTab('tasks')} className="w-full flex items-center gap-2 text-xs hover:text-brand-500">
                   <CheckCircle2 size={14} className="text-slate-400" />
                   <span className="text-slate-500">Tasks done</span>
                   <span className="font-medium ml-auto">{tasksDone} / {p.tasks.length}</span>
-                </div>
+                </button>
               </div>
             </Card>
 
             <Card>
               <CardHeader title="Financials" subtitle="Invoiced vs paid" />
               <div className="space-y-3">
-                <div className="flex items-center gap-2 text-xs">
+                <button onClick={() => setActiveTab('invoices')} className="w-full flex items-center gap-2 text-xs hover:text-brand-500">
                   <DollarSign size={14} className="text-slate-400" />
                   <span className="text-slate-500">Invoiced</span>
                   <span className="font-medium ml-auto">{formatINR(totalInvoiced)}</span>
-                </div>
-                <div className="flex items-center gap-2 text-xs">
+                </button>
+                <button onClick={() => setActiveTab('invoices')} className="w-full flex items-center gap-2 text-xs hover:text-brand-500">
                   <DollarSign size={14} className="text-emerald-500" />
                   <span className="text-slate-500">Paid</span>
                   <span className="font-medium ml-auto">{formatINR(totalPaid)}</span>
-                </div>
-                <div className="flex items-center gap-2 text-xs">
+                </button>
+                <button onClick={() => setActiveTab('invoices')} className="w-full flex items-center gap-2 text-xs hover:text-brand-500">
                   <DollarSign size={14} className="text-rose-500" />
                   <span className="text-slate-500">Outstanding</span>
                   <span className="font-medium ml-auto">{formatINR(totalInvoiced - totalPaid)}</span>
-                </div>
+                </button>
               </div>
             </Card>
 
@@ -225,7 +252,7 @@ export default function ProjectDetailPage() {
               <CardHeader title="Project Manager" subtitle="Accountability" />
               <div className="flex items-center gap-3">
                 <div className="h-12 w-12 rounded-full bg-brand-500 text-white grid place-items-center font-semibold">
-                  {p.projectManager.fullName.split(' ').map((x) => x[0]).slice(0,2).join('').toUpperCase()}
+                  {p.projectManager.fullName.split(' ').map((x) => x[0]).slice(0, 2).join('').toUpperCase()}
                 </div>
                 <div>
                   <Link to={'/employees/' + p.projectManager.id} className="font-medium hover:text-brand-500">{p.projectManager.fullName}</Link>
@@ -236,6 +263,8 @@ export default function ProjectDetailPage() {
           )}
         </div>
       )}
+
+      {activeTab === 'financials' && <ProjectFinancials projectCode={p.projectCode} />}
 
       {activeTab === 'members' && (
         <Card>
@@ -324,35 +353,32 @@ export default function ProjectDetailPage() {
         </Card>
       )}
 
-      {/* Reference Implementation */}
-      {p.reference && (
+      {activeTab === 'readme' && <ProjectReadmeTab project={p} />}
+      {activeTab === 'flowcharts' && <ProjectFlowchartTab project={p} />}
+      {activeTab === 'workspace' && <ProjectDevWorkspaceTab project={p} />}
+      {activeTab === 'monitoring' && <ProjectMonitoringTab project={p} />}
+
+      {/* Reference implementation (always shown on overview) */}
+      {activeTab === 'overview' && p.reference && (
         <Card className="border-brand-500/30 bg-brand-500/5">
           <CardHeader
             title={'Reference Implementation: ' + p.reference.name}
             subtitle={p.reference.description}
             action={
-              <a
-                href={p.reference.repoUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-xs text-brand-500 hover:underline"
-              >
+              <a href={p.reference.repoUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-brand-500 hover:underline">
                 <ExternalLink size={12} /> Open repository
               </a>
             }
           />
-
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div>
               <div className="text-[10px] uppercase tracking-wider text-slate-500 mb-2">Architecture</div>
               <p className="text-sm text-slate-600 dark:text-slate-300 mb-4">{p.reference.architecture}</p>
-
               <div className="text-[10px] uppercase tracking-wider text-slate-500 mb-2">Key Features</div>
               <ul className="text-sm text-slate-600 dark:text-slate-300 space-y-1 list-disc list-inside">
                 {p.reference.keyFeatures.map((f) => <li key={f}>{f}</li>)}
               </ul>
             </div>
-
             <div>
               <div className="text-[10px] uppercase tracking-wider text-slate-500 mb-2">Reference Tech Stack</div>
               <div className="space-y-3 mb-4">
@@ -370,7 +396,6 @@ export default function ProjectDetailPage() {
                   </div>
                 ))}
               </div>
-
               <div className="text-[10px] uppercase tracking-wider text-slate-500 mb-2">Install Steps</div>
               <pre className="rounded-md bg-slate-900 text-slate-100 p-3 text-[11px] font-mono overflow-x-auto">
                 {p.reference.installSteps.join('\n')}
@@ -379,8 +404,9 @@ export default function ProjectDetailPage() {
           </div>
         </Card>
       )}
-      {/* Related repos */}
-      {p.repositories.length > 0 && (
+
+      {/* Related repos (overview only) */}
+      {activeTab === 'overview' && p.repositories.length > 0 && (
         <Card>
           <CardHeader title="Repositories" subtitle={p.repositories.length + ' linked'} />
           <div className="space-y-2">

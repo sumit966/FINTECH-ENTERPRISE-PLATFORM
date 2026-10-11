@@ -12,8 +12,20 @@
     "sourceMap": true,
     "declaration": false,
     "noEmit": true,
-    "types": ["node"]
+    "types": [
+      "node"
+    ],
+    "isolatedModules": true
   },
-  "include": ["scripts/**/*.ts", "database/**/*.ts"],
-  "exclude": ["node_modules", "backend/node_modules", "frontend/node_modules", "frontend", "backend/dist"]
+  "include": [
+    "scripts/**/*.ts",
+    "database/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "backend/node_modules",
+    "frontend/node_modules",
+    "frontend",
+    "backend/dist"
+  ]
 }

@@ -37,6 +37,8 @@ export const navConfig: NavSection[] = [
       { label: 'Attendance',       path: '/attendance',    icon: CalendarCheck,   permission: 'attendance.read' },
       { label: 'Leave',            path: '/leave',         icon: Plane,           permission: 'leave.read' },
       { label: 'Payroll',          path: '/payroll',       icon: Wallet,          permission: 'payroll.read' },
+      { label: 'Offer Letter',     path: '/offer-letter',  icon: FileText,        permission: 'recruitment.read' },
+      { label: 'Onboarding',       path: '/onboarding',    icon: UserPlus,        permission: 'employees.read' },
     ],
   },
   {
@@ -45,6 +47,7 @@ export const navConfig: NavSection[] = [
       { label: 'Clients',          path: '/clients',       icon: Handshake,       permission: 'clients.read' },
       { label: 'Projects',         path: '/projects',      icon: FolderKanban,    permission: 'projects.read' },
       { label: 'Finance',          path: '/finance',       icon: Landmark,        permission: 'finance.read' },
+      { label: 'Funding',          path: '/funding',       icon: Landmark,        permission: 'finance.read' },
     ],
   },
   {
@@ -72,6 +75,8 @@ export const navConfig: NavSection[] = [
       { label: 'Knowledge',        path: '/knowledge',     icon: BookOpen,        permission: 'knowledge.read' },
       { label: 'Notifications',    path: '/notifications', icon: Bell },
       { label: 'Audit',            path: '/audit',         icon: ScrollText,      permission: 'audit.read' },
+      { label: 'Automation',       path: '/automation',    icon: Settings,        permission: 'settings.read' },
+      { label: 'Biometric',        path: '/biometric',     icon: Settings,        permission: 'settings.read' },
       { label: 'Settings',         path: '/settings',      icon: Settings,        permission: 'settings.read' },
     ],
   },

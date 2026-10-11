@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+﻿import { useEffect, useState } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { Card, CardHeader, StatCard } from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
@@ -20,6 +20,7 @@ function formatDate(d: string): string {
 
 export default function ClientDetailPage() {
   const { code } = useParams<{ code: string }>();
+  const navigate = useNavigate();
   const [c, setC] = useState<ClientDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -39,7 +40,7 @@ export default function ClientDetailPage() {
 
   const projCols: Column<ClientDetail['projects'][0]>[] = [
     { key: 'code', header: 'Code', render: (r) => <span className="font-mono text-xs">{r.projectCode}</span> },
-    { key: 'name', header: 'Project', render: (r) => <Link className="hover:text-brand-500 text-sm" to={'/projects/' + r.projectCode}>{r.name}</Link> },
+    { key: 'name', header: 'Project', render: (r) => <span className="text-sm font-medium">{r.name}</span> },
     { key: 'status', header: 'Status', render: (r) => <StatusBadge status={r.status} /> },
     { key: 'progress', header: 'Progress', render: (r) => <span className="text-xs">{r.progressPercent}%</span> },
     { key: 'budget', header: 'Budget', className: 'text-right', render: (r) => <span className="text-xs">{formatINR(r.budget)}</span> },
@@ -79,10 +80,29 @@ export default function ClientDetailPage() {
       </Card>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatCard label="Revenue" value={formatINR(c.revenue)} hint="Lifetime" />
-        <StatCard label="Contract Value" value={formatINR(c.contractValue)} hint={c.contracts.length + ' contracts'} />
-        <StatCard label="Total Invoiced" value={formatINR(c.invoiceTotals.totalInvoiced)} hint={c.invoiceTotals.invoiceCount + ' invoices'} />
-        <StatCard label="Total Paid" value={formatINR(c.invoiceTotals.totalPaid)} hint={'Outstanding ' + formatINR(c.invoiceTotals.totalInvoiced - c.invoiceTotals.totalPaid)} />
+        <StatCard
+          label="Revenue"
+          value={formatINR(c.revenue)}
+          hint="Lifetime"
+          onClick={() => navigate('/finance?client=' + encodeURIComponent(c.clientCode))}
+        />
+        <StatCard
+          label="Contract Value"
+          value={formatINR(c.contractValue)}
+          hint={c.contracts.length + ' contracts'}
+        />
+        <StatCard
+          label="Total Invoiced"
+          value={formatINR(c.invoiceTotals.totalInvoiced)}
+          hint={c.invoiceTotals.invoiceCount + ' invoices'}
+          onClick={() => navigate('/finance')}
+        />
+        <StatCard
+          label="Total Paid"
+          value={formatINR(c.invoiceTotals.totalPaid)}
+          hint={'Outstanding ' + formatINR(c.invoiceTotals.totalInvoiced - c.invoiceTotals.totalPaid)}
+          onClick={() => navigate('/finance?status=PAID')}
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -93,7 +113,7 @@ export default function ClientDetailPage() {
               c.contacts.map((k) => (
                 <div key={k.id} className="flex items-start gap-3">
                   <div className="h-9 w-9 rounded-full bg-brand-500 text-white grid place-items-center text-sm font-medium shrink-0">
-                    {k.fullName.split(' ').map((p) => p[0]).slice(0,2).join('').toUpperCase()}
+                    {k.fullName.split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase()}
                   </div>
                   <div>
                     <div className="text-sm font-medium flex items-center gap-2">
@@ -124,7 +144,7 @@ export default function ClientDetailPage() {
                 <div className="font-mono text-xs text-slate-500">{k.contractCode}</div>
                 <div className="font-medium">{k.title}</div>
                 <div className="text-xs text-slate-500">
-                  {formatDate(k.startDate)} \u2192 {formatDate(k.endDate)} &middot; {k.currency} {(k.value/100000).toFixed(1)}L
+                  {formatDate(k.startDate)} &rarr; {formatDate(k.endDate)} &middot; {k.currency} {(k.value / 100000).toFixed(1)}L
                 </div>
                 <div className="mt-1"><StatusBadge status={k.status} /></div>
               </div>
@@ -136,12 +156,24 @@ export default function ClientDetailPage() {
 
       <Card>
         <CardHeader title="Projects" subtitle={c.projects.length + ' projects delivered for this client'} />
-        <Table columns={projCols} data={c.projects} rowKey={(r) => r.id} emptyMessage="No projects" />
+        <Table
+          columns={projCols}
+          data={c.projects}
+          rowKey={(r) => r.id}
+          emptyMessage="No projects"
+          onRowClick={(r) => navigate('/projects/' + encodeURIComponent(r.projectCode))}
+        />
       </Card>
 
       <Card>
         <CardHeader title="Invoices" subtitle={c.invoices.length + ' recent invoices'} />
-        <Table columns={invCols} data={c.invoices} rowKey={(r) => r.id} emptyMessage="No invoices" />
+        <Table
+          columns={invCols}
+          data={c.invoices}
+          rowKey={(r) => r.id}
+          emptyMessage="No invoices"
+          onRowClick={(r) => navigate('/finance?invoice=' + encodeURIComponent(r.invoiceNumber))}
+        />
       </Card>
     </div>
   );

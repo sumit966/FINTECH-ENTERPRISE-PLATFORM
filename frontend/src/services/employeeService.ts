@@ -74,8 +74,30 @@ export interface ListEmployeesParams {
   sortDir?: 'asc' | 'desc';
 }
 
+
+export interface CreateEmployeeInput {
+  fullName: string;
+  gender: 'MALE' | 'FEMALE' | 'OTHER' | 'UNDISCLOSED';
+  email: string;
+  personalEmail?: string;
+  phone: string;
+  dateOfBirth: string;
+  joiningDate: string;
+  employmentType: 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'INTERN' | 'CONSULTANT';
+  employmentStatus: 'ACTIVE' | 'PROBATION' | 'ON_LEAVE' | 'NOTICE_PERIOD';
+  experienceYears: number;
+  salaryGrade: string;
+  basicSalary: number;
+  locationCode: string;
+  departmentCode: string;
+  teamCode?: string;
+  managerCode?: string;
+  skills?: string[];
+}
 export const employeeService = {
   list: (params: ListEmployeesParams) => api.get<EmployeeListResponse>('/employees', params as any),
   detail: (id: string) => api.get<EmployeeDetail>('/employees/' + id),
   stats: () => api.get<EmployeeStats>('/employees/stats'),
+  nextCode: () => api.get<{ employeeCode: string }>('/employees/next-code'),
+  create: (input: CreateEmployeeInput) => api.post<any>('/employees', input),
 };

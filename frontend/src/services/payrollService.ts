@@ -37,11 +37,20 @@ export interface PayrollSummary {
   paidRows: number;
   pendingRows: number;
   failedRows: number;
+  // Lifetime (not YTD) — renamed to match the data reality
+  totalGrossPaidLifetime: number;
+  totalNetPaidLifetime: number;
+  totalTaxLifetime: number;
+  // Backwards-compatible aliases
   totalGrossPaidYtd: number;
   totalNetPaidYtd: number;
   totalTaxYtd: number;
   latestPayrollPeriod: string | null;
+  earliestPayrollPeriod: string | null;
+  periodLabel: string | null;
   activeEmployeeCount: number;
+  founderExcluded?: boolean;
+  founderEmployeeCode?: string;
 }
 
 export interface PayrollTrendPoint {

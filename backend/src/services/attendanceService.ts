@@ -142,3 +142,157 @@ export async function getAttendanceByDepartment() {
   }
   return Object.values(byDept).sort((a, b) => b.total - a.total).slice(0, 15);
 }
+
+// ---- Manual attendance --------------------------------------------------
+export interface CheckInResult {
+  id: string;
+  employeeId: string;
+  employeeCode: string;
+  employeeName: string;
+  date: Date;
+  checkIn: Date;
+  status: string;
+  source: string;
+}
+
+function todayUTC(): Date {
+  const now = new Date();
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+}
+
+export async function checkIn(employeeCode: string, actorUserId: string | null) {
+  const employee = await prisma.employee.findUnique({
+    where: { employeeCode },
+    select: { id: true, employeeCode: true, fullName: true },
+  });
+  if (!employee) {
+    throw Object.assign(new Error('Employee not found'), { status: 404, code: 'NOT_FOUND' });
+  }
+
+  const date = todayUTC();
+  const existing = await prisma.attendance.findUnique({
+    where: { employeeId_date: { employeeId: employee.id, date } },
+  });
+  if (existing && existing.checkIn) {
+    throw Object.assign(new Error('Already checked in today'), { status: 409, code: 'CONFLICT' });
+  }
+
+  const now = new Date();
+  const row = existing
+    ? await prisma.attendance.update({
+        where: { id: existing.id },
+        data: { checkIn: now, status: 'PRESENT', workMode: 'OFFICE', source: 'MANUAL' },
+      })
+    : await prisma.attendance.create({
+        data: {
+          employeeId: employee.id,
+          date,
+          checkIn: now,
+          status: 'PRESENT',
+          workMode: 'OFFICE',
+          source: 'MANUAL',
+        },
+      });
+
+  await prisma.auditLog.create({
+    data: {
+      userId: actorUserId,
+      action: 'CREATE',
+      module: 'attendance',
+      recordId: row.id,
+      newValue: { employeeCode, event: 'CHECK_IN', at: now.toISOString() } as any,
+    },
+  });
+
+  return {
+    id: row.id,
+    employeeId: employee.id,
+    employeeCode: employee.employeeCode,
+    employeeName: employee.fullName,
+    date: row.date,
+    checkIn: row.checkIn!,
+    status: row.status,
+    source: row.source,
+  };
+}
+
+export async function checkOut(employeeCode: string, actorUserId: string | null) {
+  const employee = await prisma.employee.findUnique({
+    where: { employeeCode },
+    select: { id: true, employeeCode: true, fullName: true },
+  });
+  if (!employee) {
+    throw Object.assign(new Error('Employee not found'), { status: 404, code: 'NOT_FOUND' });
+  }
+
+  const date = todayUTC();
+  const row = await prisma.attendance.findUnique({
+    where: { employeeId_date: { employeeId: employee.id, date } },
+  });
+  if (!row || !row.checkIn) {
+    throw Object.assign(new Error('No check-in found for today'), { status: 400, code: 'BAD_REQUEST' });
+  }
+  if (row.checkOut) {
+    throw Object.assign(new Error('Already checked out today'), { status: 409, code: 'CONFLICT' });
+  }
+
+  const now = new Date();
+  if (now < row.checkIn) {
+    throw Object.assign(new Error('Check-out cannot be before check-in'), { status: 400, code: 'BAD_REQUEST' });
+  }
+
+  const hours = (now.getTime() - row.checkIn.getTime()) / (3600 * 1000);
+  const workingHours = Math.round(hours * 100) / 100;
+
+  const updated = await prisma.attendance.update({
+    where: { id: row.id },
+    data: { checkOut: now, workingHours },
+  });
+
+  await prisma.auditLog.create({
+    data: {
+      userId: actorUserId,
+      action: 'UPDATE',
+      module: 'attendance',
+      recordId: row.id,
+      newValue: { employeeCode, event: 'CHECK_OUT', hours: workingHours, at: now.toISOString() } as any,
+    },
+  });
+
+  return {
+    id: updated.id,
+    employeeId: employee.id,
+    employeeCode: employee.employeeCode,
+    employeeName: employee.fullName,
+    date: updated.date,
+    checkIn: updated.checkIn!,
+    checkOut: updated.checkOut!,
+    workingHours,
+    status: updated.status,
+    source: updated.source,
+  };
+}
+
+export async function myToday(employeeCode: string) {
+  const employee = await prisma.employee.findUnique({
+    where: { employeeCode },
+    select: { id: true, employeeCode: true, fullName: true },
+  });
+  if (!employee) return null;
+
+  const date = todayUTC();
+  const row = await prisma.attendance.findUnique({
+    where: { employeeId_date: { employeeId: employee.id, date } },
+  });
+
+  return {
+    employeeCode: employee.employeeCode,
+    employeeName: employee.fullName,
+    date,
+    checkIn: row?.checkIn || null,
+    checkOut: row?.checkOut || null,
+    workingHours: row?.workingHours ? Number(row.workingHours) : null,
+    status: row?.status || 'NOT_MARKED',
+    source: row?.source || null,
+  };
+}

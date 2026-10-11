@@ -1,7 +1,7 @@
 import { ButtonHTMLAttributes, forwardRef, ReactNode } from 'react';
 import clsx from 'clsx';
 
-type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
+type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'gradient';
 type Size = 'sm' | 'md' | 'lg';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -13,15 +13,16 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const VARIANT_CLASS: Record<Variant, string> = {
-  primary:   'bg-brand-500 text-white hover:bg-brand-600 focus:ring-brand-500/40',
-  secondary: 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 hover:bg-slate-200 dark:hover:bg-slate-700 focus:ring-slate-400/40',
-  ghost:     'bg-transparent text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 focus:ring-slate-400/40',
-  danger:    'bg-rose-500 text-white hover:bg-rose-600 focus:ring-rose-500/40',
+  primary:   'bg-brand-500 text-white hover:bg-brand-600 focus-visible:ring-2 focus-visible:ring-brand-500/40 shadow-soft hover:shadow-elev',
+  gradient:  'bg-gradient-brand text-white hover:opacity-95 focus-visible:ring-2 focus-visible:ring-brand-500/40 shadow-soft hover:shadow-glow',
+  secondary: 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 hover:bg-slate-200 dark:hover:bg-slate-700 focus-visible:ring-2 focus-visible:ring-slate-400/40',
+  ghost:     'bg-transparent text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 focus-visible:ring-2 focus-visible:ring-slate-400/40',
+  danger:    'bg-rose-500 text-white hover:bg-rose-600 focus-visible:ring-2 focus-visible:ring-rose-500/40 shadow-soft',
 };
 
 const SIZE_CLASS: Record<Size, string> = {
   sm: 'text-xs px-2.5 py-1.5 rounded-md gap-1.5',
-  md: 'text-sm px-3.5 py-2 rounded-md gap-2',
+  md: 'text-sm px-3.5 py-2 rounded-lg gap-2',
   lg: 'text-base px-5 py-2.5 rounded-lg gap-2',
 };
 
@@ -34,7 +35,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
       ref={ref}
       disabled={disabled || loading}
       className={clsx(
-        'inline-flex items-center justify-center font-medium transition-colors focus:outline-none focus:ring-2 disabled:opacity-60 disabled:cursor-not-allowed',
+        'inline-flex items-center justify-center font-medium transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed',
         VARIANT_CLASS[variant],
         SIZE_CLASS[size],
         className

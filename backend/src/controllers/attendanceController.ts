@@ -22,3 +22,27 @@ export async function trend(req: Request, res: Response, next: NextFunction) {
 export async function byDepartment(_req: Request, res: Response, next: NextFunction) {
   try { ok(res, await attendanceService.getAttendanceByDepartment()); } catch (e) { next(e); }
 }
+
+export const checkInSchema = z.object({ employeeCode: z.string().min(1) });
+
+export async function checkIn(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { employeeCode } = checkInSchema.parse(req.body);
+    const result = await attendanceService.checkIn(employeeCode, req.user?.id || null);
+    res.status(201).json({ success: true, data: result });
+  } catch (e) { next(e); }
+}
+
+export async function checkOut(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { employeeCode } = checkInSchema.parse(req.body);
+    ok(res, await attendanceService.checkOut(employeeCode, req.user?.id || null));
+  } catch (e) { next(e); }
+}
+
+export async function myToday(req: Request, res: Response, next: NextFunction) {
+  try {
+    const code = (req.query.employeeCode as string) || req.user?.employeeId || '';
+    ok(res, await attendanceService.myToday(code));
+  } catch (e) { next(e); }
+}

@@ -17,6 +17,9 @@ import OrgChartPage from './pages/hr/OrgChartPage';
 import AttendancePage from './pages/hr/AttendancePage';
 import LeavePage from './pages/hr/LeavePage';
 import PayrollPage from './pages/hr/PayrollPage';
+import OfferLetterPage from './pages/hr/OfferLetterPage';
+import OnboardingPage from './pages/hr/OnboardingPage';
+import OnboardingDetailPage from './pages/hr/OnboardingDetailPage';
 
 // Revenue
 import ClientsPage from './pages/clients/ClientsPage';
@@ -24,12 +27,15 @@ import ClientDetailPage from './pages/clients/ClientDetailPage';
 import ProjectsPage from './pages/projects/ProjectsPage';
 import ProjectDetailPage from './pages/projects/ProjectDetailPage';
 import FinancePage from './pages/finance/FinancePage';
+import FundingPage from './pages/finance/FundingPage';
+import FundingDetailPage from './pages/finance/FundingDetailPage';
 
 // Operations
 import RecruitmentPage from './pages/recruitment/RecruitmentPage';
 import CandidateDetailPage from './pages/recruitment/CandidateDetailPage';
 import ExamsPage from './pages/exams/ExamsPage';
 import AssessmentDetailPage from './pages/exams/AssessmentDetailPage';
+import ExamBuilderPage from './pages/exams/ExamBuilderPage';
 import AssetsPage from './pages/assets/AssetsPage';
 import LicensesPage from './pages/assets/LicensesPage';
 import VendorsPage from './pages/vendors/VendorsPage';
@@ -47,6 +53,8 @@ import KnowledgePage from './pages/knowledge/KnowledgePage';
 import NotificationsPage from './pages/notifications/NotificationsPage';
 import AuditPage from './pages/audit/AuditPage';
 import SettingsPage from './pages/settings/SettingsPage';
+import BiometricDevicesPage from './pages/settings/BiometricDevicesPage';
+import AutomationPage from './pages/automation/AutomationPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuthContext();
@@ -90,6 +98,9 @@ export default function AppRouter() {
         <Route path="attendance"     element={<AttendancePage />} />
         <Route path="leave"          element={<LeavePage />} />
         <Route path="payroll"        element={<PayrollPage />} />
+        <Route path="offer-letter"   element={<OfferLetterPage />} />
+        <Route path="onboarding"      element={<OnboardingPage />} />
+        <Route path="onboarding/:id"  element={<OnboardingDetailPage />} />
 
         {/* Revenue */}
         <Route path="clients"        element={<ClientsPage />} />
@@ -97,12 +108,15 @@ export default function AppRouter() {
         <Route path="projects"       element={<ProjectsPage />} />
         <Route path="projects/:code" element={<ProjectDetailPage />} />
         <Route path="finance"        element={<FinancePage />} />
+        <Route path="funding"        element={<FundingPage />} />
+        <Route path="funding/:code"  element={<FundingDetailPage />} />
 
         {/* Operations */}
         <Route path="recruitment"    element={<RecruitmentPage />} />
         <Route path="recruitment/candidates/:code" element={<CandidateDetailPage />} />
         <Route path="exams"          element={<ExamsPage />} />
         <Route path="exams/assessments/:code" element={<AssessmentDetailPage />} />
+        <Route path="exams/new"     element={<ExamBuilderPage />} />
         <Route path="assets"         element={<AssetsPage />} />
         <Route path="licenses"       element={<LicensesPage />} />
         <Route path="procurement"    element={<VendorsPage />} />
@@ -120,6 +134,8 @@ export default function AppRouter() {
         <Route path="notifications"  element={<NotificationsPage />} />
         <Route path="audit"          element={<AuditPage />} />
         <Route path="settings"       element={<SettingsPage />} />
+        <Route path="biometric"      element={<BiometricDevicesPage />} />
+        <Route path="automation"     element={<AutomationPage />} />
       </Route>
 
       <Route path="*" element={<NotFoundPage />} />

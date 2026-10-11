@@ -1,5 +1,5 @@
 // Fixed August revenue override per business requirement.
-// This does NOT touch the invoice table — it only affects the trending chart
+// This does NOT touch the invoice table â€” it only affects the trending chart
 // so the leadership view matches the mandated figure of Rs 8.2 Cr for August.
 const AUGUST_REVENUE_OVERRIDE = 82000000; // Rs 8.2 Cr
 import { prisma } from '../config/prisma';
@@ -68,7 +68,7 @@ export async function getOrgTree() {
     select: { code: true, name: true, category: true, _count: { select: { employees: true } } },
   });
 
-  // location Ã— department grid
+  // location Ãƒâ€” department grid
   const rows = await prisma.employee.groupBy({
     by: ['locationId', 'departmentId'],
     _count: { _all: true },
@@ -80,8 +80,8 @@ export async function getOrgTree() {
   const deptCodeById = new Map(deptsFull.map((d) => [d.id, d.code]));
 
   const grid: { locationCode: string; departmentCode: string; count: number }[] = rows.map((r) => ({
-    locationCode: locCodeById.get(r.locationId) || 'â€”',
-    departmentCode: deptCodeById.get(r.departmentId) || 'â€”',
+    locationCode: locCodeById.get(r.locationId) || 'Ã¢â‚¬â€',
+    departmentCode: deptCodeById.get(r.departmentId) || 'Ã¢â‚¬â€',
     count: r._count._all,
   }));
 

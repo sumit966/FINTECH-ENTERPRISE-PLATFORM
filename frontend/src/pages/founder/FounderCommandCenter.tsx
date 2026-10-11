@@ -1,4 +1,6 @@
-import { useEffect, useState } from 'react';
+import HeroBackground from '../../components/layout/HeroBackground';
+﻿import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Users, FolderKanban, TrendingUp, ShieldAlert, Landmark, Briefcase } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -27,6 +29,7 @@ function formatINR(v: number): string {
 }
 
 export default function FounderCommandCenter() {
+  const navigate = useNavigate();
   const [overview, setOverview] = useState<PulseOverview | null>(null);
   const [byLocation, setByLocation] = useState<HeadcountByLocation[]>([]);
   const [byStatus, setByStatus] = useState<ProjectStatusCount[]>([]);
@@ -63,15 +66,15 @@ export default function FounderCommandCenter() {
 
   if (error) return <ErrorState message={error} onRetry={load} />;
 
-  const locChartData = byLocation.map((l) => ({ name: l.code, value: l.count }));
-  const statusChartData = byStatus.map((s) => ({ status: s.status.replace(/_/g, ' '), count: s.count }));
+  const locChartData = byLocation.map((l) => ({ name: l.code, label: l.name, value: l.count }));
+  const statusChartData = byStatus.map((s) => ({ status: s.status, display: s.status.replace(/_/g, ' '), count: s.count }));
 
   const projectCols: Column<RecentProject>[] = [
     { key: 'code', header: 'Code', render: (r) => <span className="font-mono text-xs">{r.projectCode}</span> },
     { key: 'name', header: 'Project', render: (r) => <span className="font-medium">{r.name}</span> },
     { key: 'client', header: 'Client', render: (r) => (
       <span className="text-xs text-slate-500">
-        {r.clientName} <span className="opacity-60">· {r.clientCountry}</span>
+        {r.clientName} <span className="opacity-60">{'\u00B7'} {r.clientCountry}</span>
       </span>
     ) },
     { key: 'status', header: 'Status', render: (r) => <StatusBadge status={r.status} /> },
@@ -103,7 +106,7 @@ export default function FounderCommandCenter() {
     { key: 'company', header: 'Client', render: (r) => (
       <div>
         <div className="font-medium text-sm">{r.companyName}</div>
-        <div className="text-[11px] text-slate-500">{r.country} · {r.industry}</div>
+        <div className="text-[11px] text-slate-500">{r.country} {'\u00B7'} {r.industry}</div>
       </div>
     ) },
     { key: 'tier', header: 'SLA', render: (r) => <StatusBadge status={r.slaTier} /> },
@@ -113,14 +116,22 @@ export default function FounderCommandCenter() {
 
   return (
     <div className="space-y-6">
+      <HeroBackground height="220px" preset="crimson">
+        <div className="absolute inset-0 flex items-end p-6">
+          <div className="text-white">
+            <div className="text-[10px] uppercase tracking-[0.3em] text-white/60">Founder Command</div>
+            <h2 className="text-2xl font-light tracking-tight mt-1">Move to drift &middot; hold to feed it</h2>
+          </div>
+        </div>
+      </HeroBackground>
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Founder Command Center</h1>
         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-          Executive overview of the entire enterprise &middot; live from PostgreSQL
+          Executive overview of the entire enterprise {'\u00B7'} live from PostgreSQL
         </p>
       </div>
 
-      {/* Stat cards */}
+      {/* Stat cards — clickable */}
       {loading || !overview ? (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           <SkeletonCard /><SkeletonCard /><SkeletonCard /><SkeletonCard />
@@ -131,44 +142,64 @@ export default function FounderCommandCenter() {
             label="Total Headcount"
             value={overview.headcount}
             hint="Active employees across all locations"
+            icon={<Users size={18} />}
+            onClick={() => navigate('/employees')}
           />
           <StatCard
             label="Active Projects"
             value={overview.activeProjects + ' / ' + overview.totalProjects}
-            hint={'Avg health ' + overview.avgProjectHealth.toFixed(2) + ' · High risk: ' + overview.highRiskProjects}
+            hint={'Avg health ' + overview.avgProjectHealth.toFixed(2) + ' ' + '\u00B7' + ' High risk: ' + overview.highRiskProjects}
+            icon={<FolderKanban size={18} />}
+            accent="violet"
+            onClick={() => navigate('/projects')}
           />
           <StatCard
             label="Revenue YTD"
             value={formatINR(overview.revenueYtd)}
             hint={overview.activeClients + ' active clients'}
+            icon={<TrendingUp size={18} />}
+            accent="emerald"
+            onClick={() => navigate('/finance')}
           />
           <StatCard
             label="Open Security Events"
             value={overview.openSecurityEvents}
-            hint={overview.overdueInvoices + ' overdue invoices · ' + overview.openInvoices + ' open'}
+            hint={overview.overdueInvoices + ' overdue invoices ' + '\u00B7' + ' ' + overview.openInvoices + ' open'}
+            icon={<ShieldAlert size={18} />}
+            accent="rose"
+            onClick={() => navigate('/security')}
           />
         </div>
       )}
 
-      {/* Charts row */}
+      {/* Charts row — clickable bars / pie */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <Card className="lg:col-span-2">
-          <CardHeader title="Projects by Status" subtitle="All 60 projects" />
+          <CardHeader title="Projects by Status" subtitle="Click a bar to view matching projects" />
           {loading ? <SkeletonTable rows={4} /> : (
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={statusChartData}>
-                  <XAxis dataKey="status" tick={{ fontSize: 11 }} interval={0} angle={-15} textAnchor="end" height={60} />
+                  <XAxis dataKey="display" tick={{ fontSize: 11 }} interval={0} angle={-15} textAnchor="end" height={60} />
                   <YAxis tick={{ fontSize: 11 }} />
                   <Tooltip contentStyle={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: 8, fontSize: 12 }} />
-                  <Bar dataKey="count" fill="#3358ff" radius={[4, 4, 0, 0]} />
+                  <Bar
+                    dataKey="count"
+                    fill="#3358ff"
+                    radius={[4, 4, 0, 0]}
+                    cursor="pointer"
+                    onClick={(data: any) => {
+                      const raw = data?.payload?.status || data?.status;
+                      if (raw) navigate('/projects?status=' + encodeURIComponent(raw));
+                    }}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           )}
         </Card>
         <Card>
-          <CardHeader title="Headcount by Location" subtitle="Pune · Bangalore · Noida" />
+          <CardHeader title="Headcount by Location" subtitle="Click a slice to view that location" />
           {loading ? <SkeletonTable rows={3} /> : (
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
@@ -180,6 +211,11 @@ export default function FounderCommandCenter() {
                     outerRadius={70}
                     label={({ name, value }) => name + ': ' + value}
                     labelLine={false}
+                    cursor="pointer"
+                    onClick={(data: any) => {
+                      const code = data?.name || data?.payload?.name;
+                      if (code) navigate('/employees?location=' + encodeURIComponent(code));
+                    }}
                   >
                     {locChartData.map((_, i) => (
                       <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
@@ -193,28 +229,30 @@ export default function FounderCommandCenter() {
         </Card>
       </div>
 
-      {/* Recent projects */}
+      {/* Recent projects — clickable rows */}
       <Card>
-        <CardHeader title="Recent Projects" subtitle="Most recently updated" />
+        <CardHeader title="Recent Projects" subtitle="Click a row to open the project workspace" />
         {loading ? <SkeletonTable rows={6} /> : (
           <Table
             columns={projectCols}
             data={recent}
             rowKey={(r) => r.projectCode}
             emptyMessage="No projects yet"
+            onRowClick={(r) => navigate('/projects/' + encodeURIComponent(r.projectCode))}
           />
         )}
       </Card>
 
-      {/* Top clients */}
+      {/* Top clients — clickable rows */}
       <Card>
-        <CardHeader title="Top Clients by Revenue" subtitle="Highest-value accounts" />
+        <CardHeader title="Top Clients by Revenue" subtitle="Click a row to open the client workspace" />
         {loading ? <SkeletonTable rows={5} /> : (
           <Table
             columns={clientCols}
             data={topClients}
             rowKey={(r) => r.clientCode}
             emptyMessage="No clients yet"
+            onRowClick={(r) => navigate('/clients/' + encodeURIComponent(r.clientCode))}
           />
         )}
       </Card>

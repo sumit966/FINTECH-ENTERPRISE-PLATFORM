@@ -2,7 +2,7 @@ import { ReactNode } from 'react';
 
 export interface Column<T> {
   key: string;
-  header: string;
+  header: ReactNode;
   render?: (row: T) => ReactNode;
   className?: string;
 }
@@ -12,9 +12,10 @@ interface TableProps<T> {
   data: T[];
   rowKey: (row: T) => string;
   emptyMessage?: string;
+  onRowClick?: (row: T) => void;
 }
 
-export default function Table<T>({ columns, data, rowKey, emptyMessage = 'No records found' }: TableProps<T>) {
+export default function Table<T>({ columns, data, rowKey, emptyMessage = 'No records found', onRowClick }: TableProps<T>) {
   return (
     <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-800">
       <table className="w-full text-sm">
@@ -42,7 +43,26 @@ export default function Table<T>({ columns, data, rowKey, emptyMessage = 'No rec
             </tr>
           ) : (
             data.map((row) => (
-              <tr key={rowKey(row)} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+              <tr
+                key={rowKey(row)}
+                className={
+                  'hover:bg-slate-50 dark:hover:bg-slate-800/40 ' +
+                  (onRowClick ? 'cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-500/40' : '')
+                }
+                onClick={onRowClick ? () => onRowClick(row) : undefined}
+                onKeyDown={
+                  onRowClick
+                    ? (e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          onRowClick(row);
+                        }
+                      }
+                    : undefined
+                }
+                tabIndex={onRowClick ? 0 : undefined}
+                role={onRowClick ? 'button' : undefined}
+              >
                 {columns.map((c) => (
                   <td key={c.key} className={'px-3 py-2 ' + (c.className || '')}>
                     {c.render ? c.render(row) : (row as any)[c.key]}

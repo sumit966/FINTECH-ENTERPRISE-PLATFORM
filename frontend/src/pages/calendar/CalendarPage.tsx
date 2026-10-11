@@ -1,209 +1,191 @@
-import { useEffect, useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, MapPin } from 'lucide-react';
-import { Card, CardHeader, StatCard } from '../../components/ui/Card';
+﻿import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { ChevronLeft, ChevronRight, Calendar as CalIcon, Clock, MapPin, X } from 'lucide-react';
+import { Card } from '../../components/ui/Card';
+import Kpi from '../../components/ui/Kpi';
+import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
-import { SkeletonCard } from '../../components/ui/Skeleton';
+import { SkeletonTable } from '../../components/ui/Skeleton';
 import ErrorState from '../../components/ui/ErrorState';
+import EmptyState from '../../components/ui/EmptyState';
 import { calendarService, CalendarEvent, CalendarSummary } from '../../services/calendarService';
 
-const CATEGORY_TONE: Record<string, 'brand' | 'success' | 'info' | 'warn' | 'neutral' | 'danger'> = {
-  HOLIDAY: 'success',
-  MEETING: 'brand',
-  INTERVIEW: 'info',
-  MILESTONE: 'info',
-  RELEASE: 'warn',
-  TRAINING: 'brand',
-  REVIEW: 'warn',
-  PAYROLL: 'neutral',
-  LEAVE: 'neutral',
-  CLIENT: 'info',
-};
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const WEEKDAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
-const CATEGORY_COLOR: Record<string, string> = {
-  HOLIDAY: '#10b981',
-  MEETING: '#3358ff',
-  INTERVIEW: '#06b6d4',
-  MILESTONE: '#8b5cf6',
-  RELEASE: '#f59e0b',
-  TRAINING: '#3358ff',
-  REVIEW: '#f59e0b',
-  PAYROLL: '#64748b',
-  LEAVE: '#64748b',
-  CLIENT: '#06b6d4',
-};
-
-function ymd(d: Date): string {
-  return d.getUTCFullYear() + '-' + String(d.getUTCMonth() + 1).padStart(2, '0') + '-' + String(d.getUTCDate()).padStart(2, '0');
+function fmtDate(d: string): string {
+  return new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+function fmtTime(d: string): string {
+  return new Date(d).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+}
+function sameDay(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 
 export default function CalendarPage() {
+  const [params, setParams] = useSearchParams();
+  const today = new Date();
+  const yearFromUrl = params.get('year') ? Number(params.get('year')) : today.getFullYear();
+  const monthFromUrl = params.get('month') ? Number(params.get('month')) : today.getMonth();
+  const [year, setYear] = useState(yearFromUrl);
+  const [month, setMonth] = useState(monthFromUrl);
+
   const [summary, setSummary] = useState<CalendarSummary | null>(null);
-  const [cursor, setCursor] = useState(() => {
-    const d = new Date();
-    return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1));
-  });
   const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const [selectedDay, setSelectedDay] = useState<string>(ymd(new Date()));
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [openEvent, setOpenEvent] = useState<CalendarEvent | null>(null);
 
-  useEffect(() => { calendarService.summary().then(setSummary).catch(() => {}); }, []);
+  useEffect(() => { setYear(yearFromUrl); }, [yearFromUrl]);
+  useEffect(() => { setMonth(monthFromUrl); }, [monthFromUrl]);
 
-  // Build month range
-  const { first, last, days } = useMemo(() => {
-    const first = new Date(Date.UTC(cursor.getUTCFullYear(), cursor.getUTCMonth(), 1));
-    const last = new Date(Date.UTC(cursor.getUTCFullYear(), cursor.getUTCMonth() + 1, 0));
-    const days: Date[] = [];
-    // Start from the previous Monday to fill the leading grid
-    const startOffset = (first.getUTCDay() + 6) % 7;
-    const gridStart = new Date(first.getTime() - startOffset * 24 * 3600 * 1000);
-    for (let i = 0; i < 42; i++) {
-      days.push(new Date(gridStart.getTime() + i * 24 * 3600 * 1000));
-    }
-    return { first, last, days };
-  }, [cursor]);
+  useEffect(() => {
+    calendarService.summary().then(setSummary).catch(() => {});
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true); setError(null);
-    calendarService.list({ from: first.toISOString(), to: new Date(last.getTime() + 24 * 3600 * 1000).toISOString() })
+
+    // Compute the month range and pass as from/to
+    const start = new Date(year, month, 1, 0, 0, 0, 0);
+    const end = new Date(year, month + 1, 0, 23, 59, 59, 999);
+    calendarService.list({ from: start.toISOString(), to: end.toISOString() })
       .then((r) => { if (!cancelled) setEvents(r); })
-      .catch((e) => { if (!cancelled) setError(e?.message || 'Failed to load calendar'); })
+      .catch((e) => { if (!cancelled) setError(e?.message || 'Failed to load events'); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [first.toISOString(), last.toISOString()]);
+  }, [year, month]);
 
-  const eventsByDay = useMemo(() => {
-    const map: Record<string, CalendarEvent[]> = {};
-    for (const e of events) {
-      const key = e.startAt.slice(0, 10);
-      if (!map[key]) map[key] = [];
-      map[key].push(e);
-    }
-    return map;
-  }, [events]);
+  const setYm = (y: number, m: number) => {
+    const np = new URLSearchParams(params);
+    if (y === today.getFullYear()) np.delete('year'); else np.set('year', String(y));
+    if (m === today.getMonth()) np.delete('month'); else np.set('month', String(m));
+    setParams(np, { replace: true });
+  };
 
-  const selectedEvents = eventsByDay[selectedDay] || [];
+  const prevMonth = () => { const d = new Date(year, month - 1, 1); setYm(d.getFullYear(), d.getMonth()); };
+  const nextMonth = () => { const d = new Date(year, month + 1, 1); setYm(d.getFullYear(), d.getMonth()); };
 
-  if (loading && events.length === 0) return <div className="space-y-4"><SkeletonCard /><SkeletonCard /></div>;
-  if (error) return <ErrorState message={error} onRetry={() => setCursor(new Date(cursor))} />;
+  const firstOfMonth = new Date(year, month, 1);
+  const startDay = firstOfMonth.getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const grid: (Date | null)[] = [];
+  for (let i = 0; i < startDay; i++) grid.push(null);
+  for (let d = 1; d <= daysInMonth; d++) grid.push(new Date(year, month, d));
+  while (grid.length % 7 !== 0) grid.push(null);
 
-  const todayKey = ymd(new Date());
+  const eventsForDay = (d: Date) => events.filter((e) => sameDay(new Date(e.startAt), d));
+
+  const upcomingCount = summary?.upcoming.length || 0;
+  const topCat = summary?.byCategory[0];
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Company Calendar</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Calendar</h1>
         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-          Holidays, meetings, milestones, releases &middot; live from PostgreSQL
+          Company events and interviews &middot; click an event for details
         </p>
       </div>
 
       {summary && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <StatCard label="Total Events" value={summary.total} hint={summary.byCategory.length + ' categories'} />
-          <StatCard label="Holidays" value={summary.byCategory.find((c) => c.category === 'HOLIDAY')?.count || 0} hint="Public holidays" />
-          <StatCard label="Upcoming" value={summary.upcoming.length} hint="Next 10 events" />
-          <StatCard label="Releases" value={summary.byCategory.find((c) => c.category === 'RELEASE')?.count || 0} hint="Scheduled" />
+          <Kpi label="Total Events" value={summary.total} hint={summary.byCategory.length + ' categories'}
+            icon={<CalIcon size={18} />} accent="brand" />
+          <Kpi label="Upcoming" value={upcomingCount} hint="Scheduled ahead"
+            icon={<Clock size={18} />} accent="violet" />
+          <Kpi label="This Month" value={events.length} hint={MONTHS[month] + ' ' + year}
+            icon={<CalIcon size={18} />} accent="teal" />
+          <Kpi label="Top Category" value={topCat?.count || 0} hint={topCat?.category || '\u2014'}
+            accent="amber" />
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <Card className="lg:col-span-2">
-          <div className="flex items-center justify-between mb-4">
-            <div className="text-lg font-semibold">
-              {cursor.toLocaleString('en-IN', { month: 'long', year: 'numeric', timeZone: 'UTC' })}
-            </div>
-            <div className="flex items-center gap-2">
-              <button onClick={() => setCursor(new Date(Date.UTC(cursor.getUTCFullYear(), cursor.getUTCMonth() - 1, 1)))} className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800">
-                <ChevronLeft size={16} />
-              </button>
-              <button onClick={() => { const d = new Date(); setCursor(new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1))); }} className="text-xs px-2 py-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800">
-                Today
-              </button>
-              <button onClick={() => setCursor(new Date(Date.UTC(cursor.getUTCFullYear(), cursor.getUTCMonth() + 1, 1)))} className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800">
-                <ChevronRight size={16} />
-              </button>
-            </div>
+      <Card>
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="sm" onClick={prevMonth}><ChevronLeft size={14} /></Button>
+            <div className="text-lg font-semibold tracking-tight min-w-[160px] text-center">{MONTHS[month]} {year}</div>
+            <Button variant="ghost" size="sm" onClick={nextMonth}><ChevronRight size={14} /></Button>
+            <Button variant="ghost" size="sm" onClick={() => setYm(today.getFullYear(), today.getMonth())}>Today</Button>
           </div>
+          <div className="text-xs text-slate-500">{events.length} events this month</div>
+        </div>
 
-          <div className="grid grid-cols-7 gap-1 mb-2 text-[10px] uppercase tracking-wider text-slate-500 text-center">
-            {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map((d) => <div key={d}>{d}</div>)}
-          </div>
-
-          <div className="grid grid-cols-7 gap-1">
-            {days.map((d, i) => {
-              const key = ymd(d);
-              const inMonth = d.getUTCMonth() === cursor.getUTCMonth();
-              const dayEvents = eventsByDay[key] || [];
-              const isToday = key === todayKey;
-              const isSelected = key === selectedDay;
-              return (
-                <button
-                  key={i}
-                  onClick={() => setSelectedDay(key)}
-                  className={'h-24 rounded-md border p-1.5 text-left transition ' +
-                    (isSelected ? 'border-brand-500 ring-1 ring-brand-500/40 ' : 'border-slate-200 dark:border-slate-800 ') +
-                    (inMonth ? '' : 'opacity-40 ') +
-                    'hover:border-slate-400 dark:hover:border-slate-600'}
-                >
-                  <div className={'text-xs font-medium mb-1 ' + (isToday ? 'text-brand-500' : '')}>{d.getUTCDate()}</div>
-                  <div className="space-y-0.5">
-                    {dayEvents.slice(0, 3).map((e) => (
-                      <div key={e.id} className="flex items-center gap-1 text-[9px] leading-tight truncate">
-                        <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: CATEGORY_COLOR[e.category] || '#64748b' }} />
-                        <span className="truncate">{e.title}</span>
-                      </div>
-                    ))}
-                    {dayEvents.length > 3 && <div className="text-[9px] text-slate-500">+ {dayEvents.length - 3} more</div>}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </Card>
-
-        <Card>
-          <CardHeader
-            title={new Date(selectedDay + 'T00:00:00Z').toLocaleDateString('en-IN', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' })}
-            subtitle={selectedEvents.length + ' events'}
-          />
-          {selectedEvents.length === 0 ? (
-            <div className="text-sm text-slate-500 text-center py-8">
-              <CalendarIcon size={24} className="mx-auto text-slate-400 mb-2" />
-              No events on this day.
+        {error ? <ErrorState message={error} /> :
+         loading ? <SkeletonTable rows={5} /> :
+         events.length === 0 ? (
+          <EmptyState title="No events this month" description="Try navigating to a different month." />
+        ) : (
+          <>
+            <div className="grid grid-cols-7 gap-1 mb-2">
+              {WEEKDAYS.map((w) => <div key={w} className="text-center text-[10px] font-semibold uppercase tracking-wider text-slate-500 py-1">{w}</div>)}
             </div>
-          ) : (
-            <div className="space-y-3">
-              {selectedEvents.map((e) => (
-                <div key={e.id} className="rounded-lg border border-slate-200 dark:border-slate-800 p-3">
-                  <div className="flex items-start gap-2">
-                    <span className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: CATEGORY_COLOR[e.category] || '#64748b' }} />
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-sm">{e.title}</div>
-                      <div className="flex items-center gap-2 mt-1 flex-wrap">
-                        <Badge tone={CATEGORY_TONE[e.category] || 'neutral'}>{e.category}</Badge>
-                        {!e.allDay && (
-                          <span className="text-[11px] text-slate-500">
-                            {new Date(e.startAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                        )}
-                        {e.allDay && <span className="text-[11px] text-slate-500">All day</span>}
-                      </div>
-                      {e.description && <div className="text-xs text-slate-500 mt-1">{e.description}</div>}
-                      {e.location && (
-                        <div className="flex items-center gap-1 text-[11px] text-slate-500 mt-1">
-                          <MapPin size={11} /> {e.location}
-                        </div>
-                      )}
+            <div className="grid grid-cols-7 gap-1">
+              {grid.map((d, i) => {
+                if (!d) return <div key={i} className="min-h-[90px] rounded-md bg-slate-50/40 dark:bg-slate-900/20" />;
+                const dayEvents = eventsForDay(d);
+                const isToday = sameDay(d, today);
+                return (
+                  <div key={i} className={'min-h-[90px] rounded-md border p-1.5 ' + (isToday ? 'border-brand-500 bg-brand-500/5' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900')}>
+                    <div className={'text-[11px] font-medium mb-1 ' + (isToday ? 'text-brand-500' : 'text-slate-500')}>{d.getDate()}</div>
+                    <div className="space-y-0.5">
+                      {dayEvents.slice(0, 3).map((e) => (
+                        <button
+                          key={e.id}
+                          onClick={() => setOpenEvent(e)}
+                          className="block w-full text-left text-[10px] px-1 py-0.5 rounded bg-brand-500/10 text-brand-700 dark:text-brand-300 truncate hover:bg-brand-500/20 transition"
+                          title={e.title}
+                        >
+                          {!e.allDay && fmtTime(e.startAt) + ' '}{e.title}
+                        </button>
+                      ))}
+                      {dayEvents.length > 3 && <div className="text-[9px] text-slate-500 px-1">+ {dayEvents.length - 3} more</div>}
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
-          )}
-        </Card>
-      </div>
+          </>
+        )}
+      </Card>
+
+      {openEvent && (
+        <div className="fixed inset-0 z-40 bg-black/40" onClick={() => setOpenEvent(null)}>
+          <div className="absolute right-0 top-0 h-full w-full max-w-lg bg-white dark:bg-slate-900 shadow-xl overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-800">
+              <div className="font-medium text-sm">Event</div>
+              <button onClick={() => setOpenEvent(null)} className="text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"><X size={18} /></button>
+            </div>
+            <div className="p-5 space-y-4 text-sm">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Badge tone="brand">{openEvent.category}</Badge>
+                {openEvent.allDay && <Badge tone="neutral">All day</Badge>}
+              </div>
+              <div className="text-lg font-semibold">{openEvent.title}</div>
+              {openEvent.description && <div className="text-slate-600 dark:text-slate-300">{openEvent.description}</div>}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <div className="text-[10px] uppercase tracking-wider text-slate-500">Start</div>
+                  <div>{fmtDate(openEvent.startAt)}{!openEvent.allDay && ' ' + fmtTime(openEvent.startAt)}</div>
+                </div>
+                <div>
+                  <div className="text-[10px] uppercase tracking-wider text-slate-500">End</div>
+                  <div>{fmtDate(openEvent.endAt)}{!openEvent.allDay && ' ' + fmtTime(openEvent.endAt)}</div>
+                </div>
+                {openEvent.location && (
+                  <div className="col-span-2">
+                    <div className="text-[10px] uppercase tracking-wider text-slate-500 flex items-center gap-1"><MapPin size={11} /> Location</div>
+                    <div>{openEvent.location}</div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

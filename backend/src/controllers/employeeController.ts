@@ -36,3 +36,38 @@ export async function stats(_req: Request, res: Response, next: NextFunction) {
 export async function orgTree(_req: Request, res: Response, next: NextFunction) {
   try { ok(res, await employeeService.getOrgTree()); } catch (e) { next(e); }
 }
+
+export const createSchema = z.object({
+  fullName: z.string().min(2).max(120),
+  gender: z.enum(['MALE', 'FEMALE', 'OTHER', 'UNDISCLOSED']),
+  email: z.string().email(),
+  personalEmail: z.string().email().optional().or(z.literal('')),
+  phone: z.string().min(6).max(30),
+  dateOfBirth: z.string().min(4),
+  joiningDate: z.string().min(4),
+  employmentType: z.enum(['FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERN', 'CONSULTANT']),
+  employmentStatus: z.enum(['ACTIVE', 'PROBATION', 'ON_LEAVE', 'NOTICE_PERIOD']),
+  experienceYears: z.coerce.number().int().min(0).max(60),
+  salaryGrade: z.string().min(1).max(10),
+  basicSalary: z.coerce.number().min(0),
+  locationCode: z.string().min(1),
+  departmentCode: z.string().min(1),
+  teamCode: z.string().optional().or(z.literal('')),
+  managerCode: z.string().optional().or(z.literal('')),
+  skills: z.array(z.string()).optional(),
+});
+
+export async function create(req: Request, res: Response, next: NextFunction) {
+  try {
+    const parsed = createSchema.parse(req.body);
+    const actorUserId = req.user?.id || null;
+    const result = await employeeService.createEmployee(parsed as any, actorUserId);
+    res.status(201).json({ success: true, data: result });
+  } catch (e) { next(e); }
+}
+
+export async function nextCode(_req: Request, res: Response, next: NextFunction) {
+  try {
+    ok(res, { employeeCode: await employeeService.generateNextEmployeeCode() });
+  } catch (e) { next(e); }
+}

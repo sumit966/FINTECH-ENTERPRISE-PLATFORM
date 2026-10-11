@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+﻿import { useEffect, useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Card, CardHeader, StatCard } from '../../components/ui/Card';
 import Table, { Column } from '../../components/ui/Table';
@@ -17,17 +17,33 @@ function formatINR(v: number): string {
   return '\u20B9' + v.toLocaleString('en-IN');
 }
 
-const STATUSES = ['PLANNING','PENDING','ACTIVE','ON_HOLD','QA','DEPLOYMENT','DELIVERED','MAINTENANCE','CLOSED'];
-
 export default function ProjectsPage() {
   const navigate = useNavigate();
-  const [search, setSearch] = useState('');
+  const [params, setParams] = useSearchParams();
+
+  // URL is the source of truth for status + search; local state mirrors it.
+  const statusFromUrl = params.get('status') || '';
+  const searchFromUrl = params.get('q') || '';
+  const sortFromUrl = params.get('sort') || '';
+
+  const [search, setSearch] = useState(searchFromUrl);
   const debounced = useDebounce(search, 350);
-  const [status, setStatus] = useState('');
+  const status = statusFromUrl;
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
 
-  const [data, setData] = useState<ProjectListItem[]>([]);
+  const [data, setDataRaw] = useState<ProjectListItem[]>([]);
+  const setData = (items: ProjectListItem[]) => {
+    if (sortFromUrl === 'risk') {
+      const sorted = [...items].sort((a, b) => (b.riskScore ?? 0) - (a.riskScore ?? 0));
+      setDataRaw(sorted);
+    } else if (sortFromUrl === 'profit') {
+      const sorted = [...items].sort((a, b) => (b.profit ?? 0) - (a.profit ?? 0));
+      setDataRaw(sorted);
+    } else {
+      setDataRaw(items);
+    }
+  };
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -35,6 +51,19 @@ export default function ProjectsPage() {
   const [summary, setSummary] = useState<ProjectSummary | null>(null);
 
   useEffect(() => { projectService.summary().then(setSummary).catch(() => {}); }, []);
+
+  // Sync debounced search into the URL (replace so we don't spam history)
+  useEffect(() => {
+    const next = new URLSearchParams(params);
+    if (debounced && debounced !== (next.get('q') || '')) {
+      next.set('q', debounced);
+      setParams(next, { replace: true });
+    } else if (!debounced && next.has('q')) {
+      next.delete('q');
+      setParams(next, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debounced]);
 
   useEffect(() => {
     let cancelled = false;
@@ -54,6 +83,12 @@ export default function ProjectsPage() {
   }, [page, pageSize, debounced, status]);
 
   useEffect(() => { setPage(1); }, [debounced, status, pageSize]);
+
+  const setStatus = (next: string) => {
+    const p = new URLSearchParams(params);
+    if (next) p.set('status', next); else p.delete('status');
+    setParams(p, { replace: true });
+  };
 
   const columns: Column<ProjectListItem>[] = [
     { key: 'code', header: 'Code', render: (r) => <span className="font-mono text-xs">{r.projectCode}</span> },
@@ -87,21 +122,38 @@ export default function ProjectsPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Projects</h1>
         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-          60 active and delivered projects &middot; live from PostgreSQL
+          {total} projects &middot; click a row to open the project workspace
         </p>
       </div>
 
       {summary && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <StatCard label="Total Projects" value={summary.total} hint={summary.byStatus.find((s) => s.status === 'ACTIVE')?.count + ' active'} />
-          <StatCard label="Total Budget" value={formatINR(summary.totalBudget)} hint="Across all projects" />
-          <StatCard label="Total Revenue" value={formatINR(summary.totalRevenue)} hint={formatINR(summary.totalProfit) + ' profit'} />
-          <StatCard label="Avg Health" value={summary.avgHealth.toFixed(2)} hint={'Risk avg ' + summary.avgRisk.toFixed(2)} />
+          <StatCard
+            label="Total Projects"
+            value={summary.total}
+            hint={summary.byStatus.find((s) => s.status === 'ACTIVE')?.count + ' active'}
+            onClick={() => setStatus('')}
+          />
+          <StatCard
+            label="Total Budget"
+            value={formatINR(summary.totalBudget)}
+            hint="Across all projects"
+          />
+          <StatCard
+            label="Total Revenue"
+            value={formatINR(summary.totalRevenue)}
+            hint={formatINR(summary.totalProfit) + ' profit'}
+          />
+          <StatCard
+            label="Avg Health"
+            value={summary.avgHealth.toFixed(2)}
+            hint={'Risk avg ' + summary.avgRisk.toFixed(2)}
+          />
         </div>
       )}
 
       <Card>
-        <CardHeader title="Status Distribution" subtitle="All 60 projects" />
+        <CardHeader title="Status Distribution" subtitle="Click to filter" />
         {summary ? (
           <div className="flex flex-wrap gap-2">
             {summary.byStatus.map((s) => (
@@ -147,6 +199,7 @@ export default function ProjectsPage() {
             data={data}
             rowKey={(r) => r.id}
             emptyMessage="No projects match your filters"
+            onRowClick={(r) => navigate('/projects/' + encodeURIComponent(r.projectCode))}
           />
         </Card>
       )}

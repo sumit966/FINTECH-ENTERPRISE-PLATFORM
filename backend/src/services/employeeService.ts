@@ -192,3 +192,147 @@ export async function getOrgTree() {
 
   return { roots, totalNodes: emps.length };
 }
+
+// ---- Create employee ------------------------------------------------------
+export async function generateNextEmployeeCode(): Promise<string> {
+  const last = await prisma.employee.findFirst({
+    orderBy: { employeeCode: 'desc' },
+    select: { employeeCode: true },
+  });
+  const lastNum = last ? parseInt(last.employeeCode.replace('FITS-', ''), 10) : 0;
+  const next = lastNum + 1;
+  return 'FITS-' + String(next).padStart(4, '0');
+}
+
+export interface CreateEmployeeInput {
+  fullName: string;
+  gender: 'MALE' | 'FEMALE' | 'OTHER' | 'UNDISCLOSED';
+  email: string;
+  personalEmail?: string;
+  phone: string;
+  dateOfBirth: string;         // ISO date string
+  joiningDate: string;         // ISO date string
+  employmentType: 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'INTERN' | 'CONSULTANT';
+  employmentStatus: 'ACTIVE' | 'PROBATION' | 'ON_LEAVE' | 'NOTICE_PERIOD';
+  experienceYears: number;
+  salaryGrade: string;
+  basicSalary: number;
+  locationCode: string;
+  departmentCode: string;
+  teamCode?: string;
+  managerCode?: string;
+  skills?: string[];
+}
+
+export async function createEmployee(input: CreateEmployeeInput, actorUserId: string | null) {
+  // 1. Uniqueness checks
+  const existing = await prisma.employee.findFirst({
+    where: { OR: [{ email: input.email }, { phone: input.phone }] },
+    select: { id: true, email: true, phone: true },
+  });
+  if (existing) {
+    throw Object.assign(new Error('Employee with this email or phone already exists'), { status: 409, code: 'CONFLICT' });
+  }
+
+  // 2. Lookups
+  const location = await prisma.location.findUnique({ where: { code: input.locationCode } });
+  if (!location) throw Object.assign(new Error('Invalid location'), { status: 422, code: 'VALIDATION' });
+  const department = await prisma.department.findUnique({ where: { code: input.departmentCode } });
+  if (!department) throw Object.assign(new Error('Invalid department'), { status: 422, code: 'VALIDATION' });
+
+  let teamId: string | null = null;
+  if (input.teamCode) {
+    const team = await prisma.team.findUnique({ where: { code: input.teamCode } });
+    teamId = team?.id || null;
+  }
+
+  let managerId: string | null = null;
+  if (input.managerCode) {
+    const mgr = await prisma.employee.findUnique({ where: { employeeCode: input.managerCode } });
+    managerId = mgr?.id || null;
+  }
+
+  // 3. Compute salary components deterministically
+  const basic = Math.round(input.basicSalary);
+  const hra = Math.round(basic * 0.4);
+  const allowances = Math.round(basic * 0.15);
+  const bonus = Math.round(basic * 0.1);
+  const gross = basic + hra + allowances + bonus;
+  const deductions = Math.round(gross * 0.12);
+  const net = gross - deductions;
+
+  const employeeCode = await generateNextEmployeeCode();
+
+  // 4. Create
+  const created = await prisma.employee.create({
+    data: {
+      employeeCode,
+      fullName: input.fullName,
+      gender: input.gender,
+      email: input.email,
+      personalEmail: input.personalEmail || null,
+      phone: input.phone,
+      dateOfBirth: new Date(input.dateOfBirth),
+      joiningDate: new Date(input.joiningDate),
+      employmentType: input.employmentType,
+      employmentStatus: input.employmentStatus,
+      experienceYears: input.experienceYears,
+      salaryGrade: input.salaryGrade,
+      basicSalary: basic,
+      hra,
+      allowances,
+      bonus,
+      grossSalary: gross,
+      deductions,
+      netSalary: net,
+      leaveBalance: 24,
+      performanceScore: null,
+      costCenter: 'CC-' + input.departmentCode + '-NEW',
+      locationId: location.id,
+      departmentId: department.id,
+      teamId,
+      managerId,
+    },
+  });
+
+  // 5. Skills (optional)
+  if (input.skills && input.skills.length > 0) {
+    for (const skillName of input.skills) {
+      const skill = await prisma.skill.upsert({
+        where: { name: skillName },
+        update: {},
+        create: { name: skillName, category: 'TECHNICAL', description: 'Added during employee creation' },
+      });
+      await prisma.employeeSkill.create({
+        data: { employeeId: created.id, skillId: skill.id, proficiency: 3, yearsUsed: 1 },
+      });
+    }
+  }
+
+  // 6. Audit log
+  await prisma.auditLog.create({
+    data: {
+      userId: actorUserId,
+      userEmail: null,
+      action: 'CREATE',
+      module: 'employees',
+      recordId: created.id,
+      newValue: {
+        employeeCode: created.employeeCode,
+        fullName: created.fullName,
+        email: created.email,
+        department: input.departmentCode,
+        location: input.locationCode,
+      } as any,
+    },
+  });
+
+  return {
+    id: created.id,
+    employeeCode: created.employeeCode,
+    fullName: created.fullName,
+    email: created.email,
+    department: input.departmentCode,
+    location: input.locationCode,
+  };
+}
