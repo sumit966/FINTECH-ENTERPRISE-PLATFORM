@@ -192,7 +192,8 @@ export default function LeavePage() {
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Leave Management</h1>
+          <div className="text-[10px] uppercase tracking-[0.3em] text-brand-500 dark:text-brand-300 font-medium">People operations</div>
+          <h1 className="text-2xl font-semibold tracking-tight mt-1 heading-gradient">Leave Management</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
             {total.toLocaleString('en-IN')} leave requests &middot; click a row to review and decide
           </p>
@@ -224,16 +225,34 @@ export default function LeavePage() {
         <Card className="lg:col-span-2">
           <CardHeader title="Leave by Type" subtitle="Click a bar to filter" />
           {!summary ? <SkeletonTable rows={4} /> : (
-            <div className="h-64">
-              <ResponsiveContainer>
-                <BarChart data={summary.byType}>
-                  <XAxis dataKey="leaveType" tick={{ fontSize: 10 }} />
-                  <YAxis tick={{ fontSize: 11 }} />
-                  <Tooltip contentStyle={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: 8, fontSize: 12 }} />
-                  <Bar dataKey="count" name="Requests" fill="#3358ff" radius={[4, 4, 0, 0]} cursor="pointer"
-                    onClick={(d: any) => { const t = d?.payload?.leaveType || d?.leaveType; if (t) setUrl({ leaveType: t, page: null }); }} />
-                </BarChart>
-              </ResponsiveContainer>
+            <div className="space-y-3">
+              {summary.byType.map((t) => {
+                const max = Math.max(1, ...summary.byType.map((x) => x.count));
+                const pct = (t.count / max) * 100;
+                return (
+                  <button
+                    key={t.leaveType}
+                    onClick={() => setUrl({ leaveType: t.leaveType, page: null })}
+                    className="w-full text-left group"
+                  >
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-xs font-medium text-slate-600 dark:text-slate-300 group-hover:text-brand-500 transition">
+                        {t.leaveType.replace(/_/g, ' ')}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold tabular-nums">{t.count}</span>
+                        <span className="text-[10px] text-slate-400 tabular-nums">{t.days}d</span>
+                      </div>
+                    </div>
+                    <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-brand-400 to-violet-500 transition-all duration-500"
+                        style={{ width: pct + '%' }}
+                      />
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           )}
         </Card>

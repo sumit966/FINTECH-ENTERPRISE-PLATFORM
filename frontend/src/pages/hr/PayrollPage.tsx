@@ -207,15 +207,8 @@ export default function PayrollPage() {
   return (
     <div className="space-y-5">
       
-      <Card className="mb-4 border-slate-400/30 bg-slate-500/5">
-        <div className="text-xs text-slate-600 dark:text-slate-300">
-          <strong>Synthetic demonstration data.</strong> These figures reflect a synthetic 500-employee dataset spanning
-          Oct 2024 to the latest recorded period. They do not represent the intended financial scale of a real
-          operating business and are not suitable for planning, investment, or compliance purposes. See the master data
-          note in the platform documentation for details.
-        </div>
-      </Card>
-<PageHeader
+      <div className="text-[10px] uppercase tracking-[0.3em] text-brand-500 dark:text-brand-300 font-medium mb-2">Financial operations</div>
+      <PageHeader
         title="Payroll"
         subtitle={summary?.periodLabel
           ? '24 months of payroll ' + summary.periodLabel + ' \u00B7 newest period shown first \u00B7 founder excluded from totals'
@@ -233,6 +226,15 @@ export default function PayrollPage() {
           </>
         }
       />
+
+      <Card className="mb-4 border-slate-400/30 bg-slate-500/5">
+        <div className="text-xs text-slate-600 dark:text-slate-300">
+          <strong>Synthetic demonstration data.</strong> These figures reflect a synthetic 500-employee dataset spanning
+          Oct 2024 to the latest recorded period. They do not represent the intended financial scale of a real
+          operating business and are not suitable for planning, investment, or compliance purposes. See the master data
+          note in the platform documentation for details.
+        </div>
+      </Card>
 
       {summary && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">

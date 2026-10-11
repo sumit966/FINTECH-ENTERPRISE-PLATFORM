@@ -129,7 +129,8 @@ export default function AttendancePage() {
 
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Attendance</h1>
+          <div className="text-[10px] uppercase tracking-[0.3em] text-brand-500 dark:text-brand-300 font-medium">Time & attendance</div>
+          <h1 className="text-2xl font-semibold tracking-tight mt-1 heading-gradient">Attendance</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{subtitle}</p>
         </div>
         {activeFilterCount > 0 && (
