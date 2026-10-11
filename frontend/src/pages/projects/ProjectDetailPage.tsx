@@ -1,6 +1,7 @@
 ﻿import { useEffect, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, ExternalLink, GitBranch, Rocket, Users, Calendar, DollarSign, AlertTriangle, Target, CheckCircle2, FileText, Workflow, Terminal, Activity } from 'lucide-react';
+import { Sparkles, Info, Layers, Database } from 'lucide-react';
 import { Card, CardHeader, StatCard } from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import StatusBadge from '../../components/ui/StatusBadge';
@@ -34,6 +35,9 @@ export default function ProjectDetailPage() {
   const [p, setP] = useState<ProjectDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [ai, setAi] = useState<{ summary: string[]; disclaimer: string; generatedAt: string; provider: string } | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
 
   const tabFromUrl = (params.get('tab') || 'overview') as TabKey;
   const activeTab: TabKey = VALID_TABS.includes(tabFromUrl) ? tabFromUrl : 'overview';
@@ -52,6 +56,17 @@ export default function ProjectDetailPage() {
     finally { setLoading(false); }
   };
   useEffect(() => { load(); }, [code]);
+
+  useEffect(() => {
+    if (!code) return;
+    let cancelled = false;
+    setAiLoading(true); setAiError(null);
+    projectService.aiSummary(code)
+      .then((r: any) => { if (!cancelled) setAi(r); })
+      .catch((e: any) => { if (!cancelled) setAiError(e?.message || 'Failed to generate summary'); })
+      .finally(() => { if (!cancelled) setAiLoading(false); });
+    return () => { cancelled = true; };
+  }, [code]);
 
   if (loading) return <div className="space-y-4"><SkeletonCard /><SkeletonCard /><SkeletonTable rows={5} /></div>;
   if (error) return <ErrorState message={error} onRetry={load} />;
@@ -261,6 +276,112 @@ export default function ProjectDetailPage() {
               </div>
             </Card>
           )}
+
+          {/* Classification */}
+          <Card>
+            <CardHeader
+              title="Classification"
+              subtitle="Project metadata and compliance posture"
+              action={<Layers size={14} className="text-slate-400" />}
+            />
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+              <div>
+                <div className="text-[10px] uppercase tracking-wider text-slate-500">Project Type</div>
+                <div className="mt-1"><Badge tone="brand">{p.projectType}</Badge></div>
+              </div>
+              <div>
+                <div className="text-[10px] uppercase tracking-wider text-slate-500">Industry</div>
+                <div className="mt-1 font-medium">{p.industry || '—'}</div>
+              </div>
+              <div>
+                <div className="text-[10px] uppercase tracking-wider text-slate-500">Country</div>
+                <div className="mt-1 font-medium">{p.country || '—'}</div>
+              </div>
+              <div>
+                <div className="text-[10px] uppercase tracking-wider text-slate-500">Environment</div>
+                <div className="mt-1"><Badge tone="neutral">{p.environment}</Badge></div>
+              </div>
+              <div>
+                <div className="text-[10px] uppercase tracking-wider text-slate-500">SLA Tier</div>
+                <div className="mt-1"><StatusBadge status={p.slaTier} /></div>
+              </div>
+              <div>
+                <div className="text-[10px] uppercase tracking-wider text-slate-500">Security</div>
+                <div className="mt-1"><StatusBadge status={p.securityStatus} /></div>
+              </div>
+              <div>
+                <div className="text-[10px] uppercase tracking-wider text-slate-500">QA</div>
+                <div className="mt-1"><StatusBadge status={p.qaStatus} /></div>
+              </div>
+              <div>
+                <div className="text-[10px] uppercase tracking-wider text-slate-500">API Style</div>
+                <div className="mt-1 font-medium">{p.apiStyle || '—'}</div>
+              </div>
+            </div>
+          </Card>
+
+          {/* Data Operations */}
+          <Card>
+            <CardHeader
+              title="Data Operations"
+              subtitle="Derived from live project records"
+              action={<Database size={14} className="text-slate-400" />}
+            />
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {[
+                { label: 'Members', value: p.members.length },
+                { label: 'Tasks', value: p.tasks.length },
+                { label: 'Milestones', value: p.milestones.length },
+                { label: 'Risks', value: p.risks.length },
+                { label: 'Invoices', value: p.invoices.length },
+                { label: 'Repositories', value: p.repositories.length },
+                { label: 'Deployments', value: p.deployments.length },
+                { label: 'Integrations', value: p.integrations.length },
+              ].map((row) => (
+                <div key={row.label} className="rounded-md border border-slate-200/60 dark:border-slate-800/60 px-3 py-2">
+                  <div className="text-[10px] uppercase tracking-wider text-slate-500">{row.label}</div>
+                  <div className="text-lg font-semibold tabular-nums mt-0.5">{row.value}</div>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          {/* AI Insights */}
+          <Card>
+            <CardHeader
+              title="AI Insights"
+              subtitle="Rule-based summary generated from this project's records"
+              action={<Sparkles size={14} className="text-violet-500" />}
+            />
+            {aiLoading && <div className="text-xs text-slate-500">Generating summary…</div>}
+            {aiError && (
+              <div className="rounded-md border border-amber-500/30 bg-amber-500/5 p-3 text-xs text-amber-700 dark:text-amber-300 flex items-start gap-2">
+                <Info size={14} className="mt-0.5 shrink-0" />
+                <div>{aiError}</div>
+              </div>
+            )}
+            {ai && (
+              <>
+                <div className="flex items-center gap-2 mb-3">
+                  <Badge tone="neutral">provider: {ai.provider}</Badge>
+                  <span className="text-[10px] text-slate-400">
+                    generated {new Date(ai.generatedAt).toLocaleString('en-IN')}
+                  </span>
+                </div>
+                <ul className="space-y-2">
+                  {ai.summary.map((line, i) => (
+                    <li key={i} className="text-sm text-slate-700 dark:text-slate-200 flex items-start gap-2">
+                      <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-violet-500 shrink-0" />
+                      <span>{line}</span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-4 pt-3 border-t border-slate-200/60 dark:border-slate-800/60 text-[10px] text-slate-500 italic">
+                  {ai.disclaimer}
+                </div>
+              </>
+            )}
+          </Card>
         </div>
       )}
 
