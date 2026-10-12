@@ -7,11 +7,14 @@ WORK=/tmp/nexus-backend-build
 rm -rf "$WORK"
 mkdir -p "$WORK"
 
-cp -r "$OLDPWD"/* "$WORK/" 2>/dev/null || true
+# Copy backend source into temp dir
+cp -r "$OLDPWD"/* "$WORK/" || true
 cp -r "$OLDPWD"/.[!.]* "$WORK/" 2>/dev/null || true
 
-mkdir -p "$WORK/../database/prisma" "$WORK/../scripts"
-cp "$OLDPWD/../database/prisma/schema.prisma" "$WORK/../database/prisma/schema.prisma" || true
+# Copy Prisma schema and scripts one level up from backend
+mkdir -p "$WORK/../database/prisma"
+mkdir -p "$WORK/../scripts"
+cp "$OLDPWD/../database/prisma/schema.prisma" "$WORK/../database/prisma/schema.prisma"
 if [ -f "$OLDPWD/../scripts/seed.ts" ]; then
   cp "$OLDPWD/../scripts/seed.ts" "$WORK/../scripts/seed.ts" || true
 fi
@@ -23,9 +26,6 @@ npm install --no-package-lock
 
 echo "===== prisma generate ====="
 npx prisma generate --schema=../database/prisma/schema.prisma
-
-echo "===== verify prisma client location ====="
-ls -la node_modules/.prisma/client/ 2>/dev/null | head -5 || echo "prisma client not found"
 
 echo "===== tsc ====="
 npx tsc -p tsconfig.json
