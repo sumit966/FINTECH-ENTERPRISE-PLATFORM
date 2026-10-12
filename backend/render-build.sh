@@ -1,22 +1,19 @@
-﻿#!/usr/bin/env bash
+#!/usr/bin/env bash
 set -e
 
 echo "===== Backend standalone build for Render ====="
 
-# Work in a temp dir that has no parent package.json
 WORK=/tmp/nexus-backend-build
 rm -rf "$WORK"
 mkdir -p "$WORK"
 
-# Copy backend source
 cp -r "$OLDPWD"/* "$WORK/" 2>/dev/null || true
 cp -r "$OLDPWD"/.[!.]* "$WORK/" 2>/dev/null || true
 
-# Copy Prisma schema and scripts where backend expects them
 mkdir -p "$WORK/../database/prisma" "$WORK/../scripts"
-cp "$OLDPWD/../database/prisma/schema.prisma" "$WORK/../database/prisma/schema.prisma"
+cp "$OLDPWD/../database/prisma/schema.prisma" "$WORK/../database/prisma/schema.prisma" || true
 if [ -f "$OLDPWD/../scripts/seed.ts" ]; then
-  cp "$OLDPWD/../scripts/seed.ts" "$WORK/../scripts/seed.ts"
+  cp "$OLDPWD/../scripts/seed.ts" "$WORK/../scripts/seed.ts" || true
 fi
 
 cd "$WORK"
@@ -28,12 +25,13 @@ echo "===== prisma generate ====="
 npx prisma generate --schema=../database/prisma/schema.prisma
 
 echo "===== verify prisma client location ====="
-ls -la node_modules/.prisma/client/ | head -5
+ls -la node_modules/.prisma/client/ 2>/dev/null | head -5 || echo "prisma client not found"
 
 echo "===== tsc ====="
 npx tsc -p tsconfig.json
 
 echo "===== copy dist back ====="
-cp -r dist "$OLDPWD/dist"
+mkdir -p "$OLDPWD/dist"
+cp -r dist/* "$OLDPWD/dist/"
 
 echo "===== build complete ====="
