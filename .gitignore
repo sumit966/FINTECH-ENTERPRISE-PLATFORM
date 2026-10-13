@@ -45,3 +45,6 @@ remaining/
 frontend/dist/
 frontend/vite.config.js
 frontend/vite.config.d.ts
+
+# Backup files
+*.bak
